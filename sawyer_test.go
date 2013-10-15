@@ -21,11 +21,10 @@ func TestErrorResponse(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	res := client.Get(user, apierr, "404")
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
+	res, err := client.Get(user, "404")
+	if err != nil {
+		t.Fatalf("response errored: %s", err)
 	}
 
 	assert.Equal(t, 404, res.StatusCode)
