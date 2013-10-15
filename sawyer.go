@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,6 +13,13 @@ var httpClient = &http.Client{}
 type Client struct {
 	HttpClient *http.Client
 	Endpoint   *url.URL
+	Decoders   map[string]DecoderFunc
+}
+
+type DecoderFunc func(r io.Reader) Decoder
+
+type Decoder interface {
+	Decode(v interface{}) error
 }
 
 func New(endpoint *url.URL, client *http.Client) *Client {
@@ -23,7 +31,12 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint}
+	decoders := map[string]DecoderFunc{
+		"json": func(r io.Reader) Decoder {
+			return json.NewDecoder(r)
+		},
+	}
+	return &Client{client, endpoint, decoders}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {
@@ -52,19 +65,20 @@ func (c *Client) Get(resource interface{}, rawurl string) (*http.Response, error
 	}
 	defer res.Body.Close()
 
-	if !UseApiError(res.StatusCode) {
-		dec := json.NewDecoder(res.Body)
-		err := dec.Decode(resource)
-		if err != nil {
-			return res, err
-		}
-	}
-
-	return res, nil
+	return res, c.decode(resource, res)
 }
 
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	return c.Endpoint.ResolveReference(u)
+}
+
+func (c *Client) decode(resource interface{}, res *http.Response) error {
+	if UseApiError(res.StatusCode) {
+		return nil
+	}
+
+	// TODO: content type negotiation to find the right decoder
+	return c.Decoders["json"](res.Body).Decode(resource)
 }
 
 func (c *Client) resolveReferenceString(rawurl string) (string, error) {

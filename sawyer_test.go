@@ -110,9 +110,11 @@ func Setup(t *testing.T) *SetupServer {
 	mux := http.NewServeMux()
 	srv := httptest.NewServer(mux)
 	client, err := NewFromString(srv.URL, nil)
+
 	if err != nil {
 		t.Fatalf("Unable to parse %s: %s", srv.URL, err.Error())
 	}
+
 	return &SetupServer{client, srv, mux}
 }
 
