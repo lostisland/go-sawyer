@@ -21,8 +21,9 @@ func TestSuccessfulGet(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
+	apierr := &TestError{}
 
-	res, err := client.Get(user, "user")
+	res, err := client.Get(user, apierr, "user")
 	if err != nil {
 		t.Fatalf("response errored: %s", err)
 	}
@@ -30,6 +31,7 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
+	assert.Equal(t, "", apierr.Message)
 }
 
 func TestErrorResponse(t *testing.T) {
@@ -45,8 +47,9 @@ func TestErrorResponse(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
+	apierr := &TestError{}
 
-	res, err := client.Get(user, "404")
+	res, err := client.Get(user, apierr, "404")
 	if err != nil {
 		t.Fatalf("response errored: %s", err)
 	}
@@ -54,6 +57,7 @@ func TestErrorResponse(t *testing.T) {
 	assert.Equal(t, 404, res.StatusCode)
 	assert.Equal(t, 0, user.Id)
 	assert.Equal(t, "", user.Login)
+	assert.Equal(t, "not found", apierr.Message)
 }
 
 var endpoints = map[string]map[string]string{

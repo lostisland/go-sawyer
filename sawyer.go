@@ -48,7 +48,7 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	return New(e, client), nil
 }
 
-func (c *Client) Get(resource interface{}, rawurl string) (*http.Response, error) {
+func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) (*http.Response, error) {
 	u, err := c.resolveReferenceString(rawurl)
 	if err != nil {
 		return nil, err
@@ -65,20 +65,22 @@ func (c *Client) Get(resource interface{}, rawurl string) (*http.Response, error
 	}
 	defer res.Body.Close()
 
-	return res, c.decode(resource, res)
+	return res, c.decode(resource, apierr, res)
 }
 
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	return c.Endpoint.ResolveReference(u)
 }
 
-func (c *Client) decode(resource interface{}, res *http.Response) error {
+func (c *Client) decode(resource interface{}, apierr interface{}, res *http.Response) error {
+	// TODO: content type negotiation to find the right decoder
+	dec := c.Decoders["json"](res.Body)
+
 	if UseApiError(res.StatusCode) {
-		return nil
+		return dec.Decode(apierr)
 	}
 
-	// TODO: content type negotiation to find the right decoder
-	return c.Decoders["json"](res.Body).Decode(resource)
+	return dec.Decode(resource)
 }
 
 func (c *Client) resolveReferenceString(rawurl string) (string, error) {
