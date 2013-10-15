@@ -48,17 +48,7 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	return New(e, client), nil
 }
 
-func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) (*http.Response, error) {
-	u, err := c.resolveReferenceString(rawurl)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) Do(resource interface{}, apierr interface{}, req *http.Request) (*http.Response, error) {
 	res, err := c.HttpClient.Do(req)
 	if err != nil {
 		return res, err
@@ -66,6 +56,24 @@ func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) (*
 	defer res.Body.Close()
 
 	return res, c.decode(resource, apierr, res)
+}
+
+func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) (*http.Response, error) {
+	req, err := c.NewRequest("GET", rawurl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.Do(resource, apierr, req)
+}
+
+func (c *Client) NewRequest(method string, rawurl string, body io.Reader) (*http.Request, error) {
+	u, err := c.resolveReferenceString(rawurl)
+	if err != nil {
+		return nil, err
+	}
+
+	return http.NewRequest("GET", u, nil)
 }
 
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
