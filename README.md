@@ -10,6 +10,8 @@ Use this to build clients for HTTP/JSON APIs that behave like the GitHub API.
 
 ## Pseudo Usage
 
+Just some ideas, there's no chance the final result will look like this :)
+
 ```go
 type User struct {
   Login string `json:"login"`
