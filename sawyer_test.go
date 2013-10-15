@@ -7,10 +7,14 @@ import (
 
 var endpoints = map[string]map[string]string{
 	"http://api.github.com": map[string]string{
-		"user": "http://api.github.com/user",
+		"user":                "http://api.github.com/user",
+		"/user":               "http://api.github.com/user",
+		"http://api.com/user": "http://api.com/user",
 	},
 	"http://api.github.com/api/v1": map[string]string{
-		"user": "http://api.github.com/api/v1/user",
+		"user":                "http://api.github.com/api/v1/user",
+		"/user":               "http://api.github.com/user",
+		"http://api.com/user": "http://api.com/user",
 	},
 }
 
