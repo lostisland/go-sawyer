@@ -1,6 +1,7 @@
 package sawyer
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -47,7 +48,16 @@ func (c *Client) Get(resource interface{}, rawurl string) (*http.Response, error
 
 	res, err := c.HttpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return res, err
+	}
+	defer res.Body.Close()
+
+	if !UseApiError(res.StatusCode) {
+		dec := json.NewDecoder(res.Body)
+		err := dec.Decode(resource)
+		if err != nil {
+			return res, err
+		}
 	}
 
 	return res, nil
@@ -63,4 +73,16 @@ func (c *Client) resolveReferenceString(rawurl string) (string, error) {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
+}
+
+func UseApiError(status int) bool {
+	switch {
+	case status > 199 && status < 300:
+		return false
+	case status == 304:
+		return false
+	case status == 0:
+		return false
+	}
+	return true
 }
