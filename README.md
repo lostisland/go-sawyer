@@ -20,10 +20,20 @@ class ApiError struct {
 }
 
 client := sawyer.NewFromString("https://api.github.com")
-client.Headers.Set("Accept", "application/vnd.github+json")
+
+// this sets Accept header to application/json
 client.SetEncoding("json")
+
+// the GitHub API prefers a vendor media type
+client.Headers.Set("Accept", "application/vnd.github+json")
+
+// this is the struct that decodes JSON errors
 client.SetError(ApiError)
 
 user := &User{}
 res := client.Get(user, "user/21")
+
+// get the user's repositories
+repos := []Repository{}
+res2 := client.Get(repos, res.relations["repos"])
 ```
