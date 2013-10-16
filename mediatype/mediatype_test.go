@@ -93,3 +93,8 @@ func Get(t *testing.T, v string) *MediaType {
 	assert.Equal(t, v, m.String())
 	return m
 }
+
+// used for encoding/decoding tests
+type Person struct {
+	Name string
+}

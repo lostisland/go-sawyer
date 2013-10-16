@@ -15,6 +15,9 @@ func init() {
 	mediatype.AddDecoder("json", func(r io.Reader) mediatype.Decoder {
 		return json.NewDecoder(r)
 	})
+	mediatype.AddEncoder("json", func(w io.Writer) mediatype.Encoder {
+		return json.NewEncoder(w)
+	})
 }
 
 type Client struct {

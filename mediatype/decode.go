@@ -22,3 +22,10 @@ func (m *MediaType) Decoder(body io.Reader) Decoder {
 	}
 	return nil
 }
+
+func (m *MediaType) Decode(v interface{}, body io.Reader) error {
+	if dec := m.Decoder(body); dec != nil {
+		return dec.Decode(v)
+	}
+	return nil
+}
