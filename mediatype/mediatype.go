@@ -92,4 +92,4 @@ const (
 	vndSplit    = "."
 )
 
-var guessableTypes = []string{"json", "xml", "text"}
+var guessableTypes = []string{"json", "xml"}

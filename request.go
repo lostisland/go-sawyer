@@ -13,16 +13,6 @@ type Request struct {
 	*http.Request
 }
 
-const (
-	HeadMethod    = "HEAD"
-	GetMethod     = "GET"
-	PostMethod    = "POST"
-	PutMethod     = "PUT"
-	PatchMethod   = "PATCH"
-	DeleteMethod  = "DELETE"
-	OptionsMethod = "OPTIONS"
-)
-
 func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error) {
 	u, err := c.resolveReferenceString(rawurl)
 	if err != nil {
@@ -82,3 +72,13 @@ func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
 	r.Body = ioutil.NopCloser(buf)
 	return nil
 }
+
+const (
+	HeadMethod    = "HEAD"
+	GetMethod     = "GET"
+	PostMethod    = "POST"
+	PutMethod     = "PUT"
+	PatchMethod   = "PATCH"
+	DeleteMethod  = "DELETE"
+	OptionsMethod = "OPTIONS"
+)
