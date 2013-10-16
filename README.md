@@ -1,5 +1,7 @@
 # Sawyer
 
+Status: Very experimental
+
 Sawyer is an HTTP user agent for REST APIs.  It is a spiritual compliment to
 the [Ruby sawyer gem](https://github.com/lostisland/sawyer).
 
@@ -8,9 +10,7 @@ the [Ruby sawyer gem](https://github.com/lostisland/sawyer).
 Use this to build clients for HTTP/JSON APIs that behave like the GitHub API.
 
 
-## Pseudo Usage
-
-Just some ideas, there's no chance the final result will look like this :)
+## Usage
 
 ```go
 type User struct {
