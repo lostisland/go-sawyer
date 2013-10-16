@@ -9,6 +9,7 @@ import (
 type Request struct {
 	Client   *http.Client
 	ApiError interface{}
+    MediaType  *mediatype.MediaType
 	*http.Request
 }
 
@@ -29,7 +30,7 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	}
 
 	httpreq, err := http.NewRequest(GetMethod, u, nil)
-	return &Request{c.HttpClient, apierr, httpreq}, err
+	return &Request{c.HttpClient, apierr, nil, httpreq}, err
 }
 
 func (r *Request) Head(output interface{}) (*Response, error) {
@@ -61,6 +62,7 @@ func (r *Request) Options(output interface{}) (*Response, error) {
 }
 
 func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
+  r.MediaType = mtype
 	buf, err := mtype.Encode(input)
 	if err != nil {
 		return err
