@@ -1,4 +1,4 @@
-package hypermedia
+package sawyer
 
 import (
 	"github.com/jtacoma/uritemplates"

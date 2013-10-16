@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gofmt -w -l ./client ./mediatype ./hypermedia
+gofmt -w -l *.go ./mediatype

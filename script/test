@@ -1,4 +1,3 @@
 script/fmt
 go test -race -v "$@" ./mediatype
-go test -race -v "$@" ./hypermedia
-go test -race -v "$@" ./client
+go test -race -v "$@" .

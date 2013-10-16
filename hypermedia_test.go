@@ -1,4 +1,4 @@
-package hypermedia
+package sawyer
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ func TestDecode(t *testing.T) {
   }
 }`
 
-	user := &TestUser{}
+	user := &HypermediaUser{}
 	dec := json.NewDecoder(bytes.NewBufferString(input))
 	err := dec.Decode(user)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, "/foo/bar/baz", url.String())
 }
 
-type TestUser struct {
+type HypermediaUser struct {
 	Login string
 	Url   Hyperlink
 	Links Links `json:"_links"`

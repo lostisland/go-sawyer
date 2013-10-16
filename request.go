@@ -1,7 +1,6 @@
 package sawyer
 
 import (
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
@@ -34,7 +33,7 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	return &Request{c.HttpClient, apierr, nil, httpreq}, err
 }
 
-func (c *Client) NewRelation(link *hypermedia.Hyperlink, args hypermedia.M, apierr interface{}) (*Request, error) {
+func (c *Client) NewRelation(link *Hyperlink, args M, apierr interface{}) (*Request, error) {
 	u, err := link.Expand(args)
 	if err != nil {
 		return nil, err
