@@ -23,6 +23,7 @@ func init() {
 type Client struct {
 	HttpClient *http.Client
 	Endpoint   *url.URL
+	Query      url.Values
 }
 
 func New(endpoint *url.URL, client *http.Client) *Client {
@@ -34,7 +35,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint}
+	return &Client{client, endpoint, endpoint.Query()}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {
@@ -47,13 +48,31 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 }
 
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
-	return c.Endpoint.ResolveReference(u)
+	absurl := c.Endpoint.ResolveReference(u)
+	if len(c.Query) > 0 {
+		absurl.RawQuery = mergeQueries(c.Query, absurl.Query())
+	}
+	return absurl
 }
 
-func (c *Client) resolveReferenceString(rawurl string) (string, error) {
+func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
+}
+
+func mergeQueries(queries ...url.Values) string {
+	merged := make(url.Values)
+	for _, q := range queries {
+		if len(q) == 0 {
+			break
+		}
+
+		for key, _ := range q {
+			merged.Set(key, q.Get(key))
+		}
+	}
+	return merged.Encode()
 }

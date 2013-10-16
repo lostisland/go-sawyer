@@ -14,7 +14,7 @@ type Request struct {
 }
 
 func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error) {
-	u, err := c.resolveReferenceString(rawurl)
+	u, err := c.ResolveReferenceString(rawurl)
 	if err != nil {
 		return nil, err
 	}
