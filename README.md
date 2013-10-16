@@ -43,6 +43,6 @@ apierr := &ApiError{}
 userInput := &User{Login: "bob"}
 userOutput := &User{}
 req := client.NewRequest("users", apierr)
-req.Body = mtype.Encode(userInput)
+err := req.SetBody(mtype, userInput)
 res := req.Post(userOutput)
 ```
