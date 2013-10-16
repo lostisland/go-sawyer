@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"encoding/json"
+	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,16 +11,15 @@ import (
 
 var httpClient = &http.Client{}
 
+func init() {
+	mediatype.AddDecoder("json", func(r io.Reader) mediatype.Decoder {
+		return json.NewDecoder(r)
+	})
+}
+
 type Client struct {
 	HttpClient *http.Client
 	Endpoint   *url.URL
-	Decoders   map[string]DecoderFunc
-}
-
-type DecoderFunc func(r io.Reader) Decoder
-
-type Decoder interface {
-	Decode(v interface{}) error
 }
 
 func New(endpoint *url.URL, client *http.Client) *Client {
@@ -31,12 +31,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	decoders := map[string]DecoderFunc{
-		"json": func(r io.Reader) Decoder {
-			return json.NewDecoder(r)
-		},
-	}
-	return &Client{client, endpoint, decoders}
+	return &Client{client, endpoint}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {

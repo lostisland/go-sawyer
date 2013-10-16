@@ -53,9 +53,9 @@ func buildResponse(resource interface{}, apierr interface{}, c *Client, httpres 
 }
 
 func decode(resource interface{}, apierr interface{}, c *Client, res *Response) error {
-	decoder, err := decoder(c, res)
-	if err != nil || decoder == nil {
-		return err
+	decoder := res.MediaType.Decoder(res.Body)
+	if decoder == nil {
+		return nil
 	}
 
 	if res.useApiError && apierr != nil {
@@ -64,13 +64,6 @@ func decode(resource interface{}, apierr interface{}, c *Client, res *Response) 
 		return decoder.Decode(resource)
 	}
 	return nil
-}
-
-func decoder(c *Client, res *Response) (Decoder, error) {
-	if decfunc, ok := c.Decoders[res.MediaType.Format]; ok {
-		return decfunc(res.Body), nil
-	}
-	return nil, nil
 }
 
 func mediaType(res *http.Response) (*mediatype.MediaType, error) {
