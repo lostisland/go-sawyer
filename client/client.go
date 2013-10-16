@@ -2,7 +2,6 @@ package sawyer
 
 import (
 	"encoding/json"
-	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
 	"net/url"
@@ -49,20 +48,15 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	return New(e, client), nil
 }
 
-func (c *Client) Do(resource interface{}, apierr interface{}, req *http.Request) (*http.Response, error) {
-	res, err := c.HttpClient.Do(req)
-	if err != nil {
-		return res, err
-	}
-	defer res.Body.Close()
-
-	return res, c.decode(resource, apierr, res)
+func (c *Client) Do(resource interface{}, apierr interface{}, req *http.Request) *Response {
+	httpres, err := c.HttpClient.Do(req)
+	return buildResponse(resource, apierr, c, httpres, err)
 }
 
-func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) (*http.Response, error) {
+func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) *Response {
 	req, err := c.NewRequest("GET", rawurl, nil)
 	if err != nil {
-		return nil, err
+		return apiResponse(err)
 	}
 
 	return c.Do(resource, apierr, req)
@@ -81,63 +75,10 @@ func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	return c.Endpoint.ResolveReference(u)
 }
 
-func (c *Client) decode(resource interface{}, apierr interface{}, res *http.Response) error {
-	if UseApiError(res.StatusCode) {
-		return c.decodeResource(apierr, res)
-	}
-	return c.decodeResource(resource, res)
-}
-
-func (c *Client) decodeResource(resource interface{}, res *http.Response) error {
-	if resource == nil {
-		return nil
-	}
-
-	dec, err := c.decoder(res)
-	if err != nil {
-		return err
-	} else if dec != nil {
-		return dec.Decode(resource)
-	}
-
-	return nil
-}
-
-func (c *Client) decoder(res *http.Response) (Decoder, error) {
-	mt, err := c.mediaType(res)
-	if err != nil {
-		return nil, err
-	}
-
-	if decfunc, ok := c.Decoders[mt.Format]; ok {
-		return decfunc(res.Body), nil
-	}
-	return nil, nil
-}
-
-func (c *Client) mediaType(res *http.Response) (*mediatype.MediaType, error) {
-	if ctype := res.Header.Get("Content-Type"); len(ctype) > 0 {
-		return mediatype.Parse(ctype)
-	}
-	return nil, nil
-}
-
 func (c *Client) resolveReferenceString(rawurl string) (string, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
-}
-
-func UseApiError(status int) bool {
-	switch {
-	case status > 199 && status < 300:
-		return false
-	case status == 304:
-		return false
-	case status == 0:
-		return false
-	}
-	return true
 }
