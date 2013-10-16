@@ -23,6 +23,7 @@ func init() {
 type Client struct {
 	HttpClient *http.Client
 	Endpoint   *url.URL
+	Header     http.Header
 	Query      url.Values
 }
 
@@ -35,7 +36,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, endpoint.Query()}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {

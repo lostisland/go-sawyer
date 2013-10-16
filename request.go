@@ -20,6 +20,9 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	}
 
 	httpreq, err := http.NewRequest(GetMethod, u, nil)
+	for key, _ := range c.Header {
+		httpreq.Header.Set(key, c.Header.Get(key))
+	}
 	return &Request{c.HttpClient, apierr, nil, httpreq}, err
 }
 

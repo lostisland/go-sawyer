@@ -41,6 +41,32 @@ func TestResolve(t *testing.T) {
 	}
 }
 
+func TestResolveWithNoHeader(t *testing.T) {
+	client, err := NewFromString("http://api.github.com", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	req, _ := client.NewRequest("", nil)
+	assert.Equal(t, 0, len(req.Header))
+
+	req.Header.Set("Cache-Control", "private")
+	assert.Equal(t, 1, len(req.Header))
+	assert.Equal(t, 0, len(client.Header))
+}
+
+func TestResolveWithHeader(t *testing.T) {
+	client, err := NewFromString("http://api.github.com", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	client.Header.Set("Cache-Control", "private")
+
+	req, _ := client.NewRequest("", nil)
+	assert.Equal(t, 1, len(req.Header))
+	assert.Equal(t, "private", req.Header.Get("Cache-Control"))
+}
+
 func TestResolveQuery(t *testing.T) {
 	client, err := NewFromString("http://api.github.com", nil)
 	if err != nil {
