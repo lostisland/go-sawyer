@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"github.com/bmizerany/assert"
+	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +14,7 @@ func TestSuccessfulGet(t *testing.T) {
 	defer setup.Teardown()
 
 	setup.Mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "GET", r.Method)
 		head := w.Header()
 		head.Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -36,6 +38,46 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
+	assert.Equal(t, "", apierr.Message)
+}
+
+func TestSuccessfulPost(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	mtype, err := mediatype.Parse("application/json")
+
+	setup.Mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "POST", r.Method)
+
+		user := &TestUser{}
+		mtype.Decode(user, r.Body)
+		assert.Equal(t, "sawyer", user.Login)
+
+		head := w.Header()
+		head.Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"login": "sawyer2"}`))
+	})
+
+	client := setup.Client
+	user := &TestUser{}
+	apierr := &TestError{}
+
+	req, err := client.NewRequest("users", apierr)
+	if err != nil {
+		t.Fatalf("request errored: %s", err)
+	}
+
+	user.Login = "sawyer"
+	req.SetBody(mtype, user)
+	res, err := req.Post(user)
+	if err != nil {
+		t.Fatalf("response errored: %s", err)
+	}
+
+	assert.Equal(t, 201, res.StatusCode)
+	assert.Equal(t, "sawyer2", user.Login)
 	assert.Equal(t, "", apierr.Message)
 }
 

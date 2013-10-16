@@ -11,11 +11,8 @@ type Response struct {
 	*http.Response
 }
 
-func (r *Request) Get(output interface{}) (*Response, error) {
-	return r.Do(GetMethod, output)
-}
-
 func (r *Request) Do(method string, output interface{}) (*Response, error) {
+	r.Method = method
 	httpres, err := r.Client.Do(r.Request)
 	if err != nil {
 		return nil, err
