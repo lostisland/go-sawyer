@@ -49,6 +49,7 @@ func TestSuccessfulPost(t *testing.T) {
 
 	setup.Mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
+		assert.Equal(t, mtype.String(), r.Header.Get("Content-Type"))
 
 		user := &TestUser{}
 		mtype.Decode(user, r.Body)

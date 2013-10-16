@@ -7,9 +7,9 @@ import (
 )
 
 type Request struct {
-	Client   *http.Client
-	ApiError interface{}
-    MediaType  *mediatype.MediaType
+	Client    *http.Client
+	ApiError  interface{}
+	MediaType *mediatype.MediaType
 	*http.Request
 }
 
@@ -62,11 +62,13 @@ func (r *Request) Options(output interface{}) (*Response, error) {
 }
 
 func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
-  r.MediaType = mtype
+	r.MediaType = mtype
 	buf, err := mtype.Encode(input)
 	if err != nil {
 		return err
 	}
+
+	r.Header.Set("Content-Type", mtype.String())
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(buf)
 	return nil
