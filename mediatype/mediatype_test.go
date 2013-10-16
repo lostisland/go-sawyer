@@ -37,7 +37,7 @@ func TestSimpleTypeWithParams(t *testing.T) {
 	assert.Equal(t, "plain", m.SubType)
 	assert.Equal(t, "", m.Suffix)
 	assert.Equal(t, "", m.Vendor)
-	assert.Equal(t, "text", m.Format)
+	assert.Equal(t, "", m.Format)
 	assert.Equal(t, false, m.IsVendor())
 	assert.Equal(t, 1, len(m.Params))
 	assert.Equal(t, "utf-8", m.Params["charset"])
