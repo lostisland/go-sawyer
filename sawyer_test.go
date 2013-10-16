@@ -41,7 +41,17 @@ func TestResolve(t *testing.T) {
 	}
 }
 
-func TestResolveWithQuery(t *testing.T) {
+func TestResolveQuery(t *testing.T) {
+	client, err := NewFromString("http://api.github.com", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	u, err := client.ResolveReferenceString("/foo?a=1")
+	assert.Equal(t, "http://api.github.com/foo?a=1", u)
+}
+
+func TestResolveQueryWithClientQuery(t *testing.T) {
 	client, err := NewFromString("http://api.github.com?a=1&b=1", nil)
 	if err != nil {
 		t.Fatal(err.Error())
