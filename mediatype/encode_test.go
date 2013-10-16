@@ -3,7 +3,6 @@ package mediatype
 import (
 	"github.com/bmizerany/assert"
 	"io"
-	"io/ioutil"
 	"testing"
 )
 
@@ -23,8 +22,7 @@ func TestAddEncoder(t *testing.T) {
 		t.Fatalf("Error encoding: %s", err.Error())
 	}
 
-	by, _ := ioutil.ReadAll(buf)
-	assert.Equal(t, "bob", string(by))
+	assert.Equal(t, "bob", buf.String())
 }
 
 type PersonEncoder struct {

@@ -24,7 +24,7 @@ func (m *MediaType) Encoder(w io.Writer) Encoder {
 	return nil
 }
 
-func (m *MediaType) Encode(v interface{}) (io.Reader, error) {
+func (m *MediaType) Encode(v interface{}) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	if enc := m.Encoder(buf); enc != nil {
 		if err := enc.Encode(v); err != nil {
