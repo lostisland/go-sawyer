@@ -67,13 +67,14 @@ func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
 		return err
 	}
 
-	r.Header.Set("Content-Type", mtype.String())
+	r.Header.Set(ctypeHeader, mtype.String())
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(buf)
 	return nil
 }
 
 const (
+	ctypeHeader   = "Content-Type"
 	HeadMethod    = "HEAD"
 	GetMethod     = "GET"
 	PostMethod    = "POST"

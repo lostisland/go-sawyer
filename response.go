@@ -54,7 +54,7 @@ func UseApiError(status int) bool {
 }
 
 func mediaType(res *http.Response) (*mediatype.MediaType, error) {
-	if ctype := res.Header.Get("Content-Type"); len(ctype) > 0 {
+	if ctype := res.Header.Get(ctypeHeader); len(ctype) > 0 {
 		return mediatype.Parse(ctype)
 	}
 	return nil, nil
