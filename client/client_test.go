@@ -23,9 +23,14 @@ func TestSuccessfulGet(t *testing.T) {
 	user := &TestUser{}
 	apierr := &TestError{}
 
-	res := client.Get(user, apierr, "user")
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
+	req, err := client.NewRequest("user", apierr)
+	if err != nil {
+		t.Fatalf("request errored: %s", err)
+	}
+
+	res, err := req.Get(user)
+	if err != nil {
+		t.Fatalf("response errored: %s", err)
 	}
 
 	assert.Equal(t, 200, res.StatusCode)
@@ -49,9 +54,14 @@ func TestErrorResponse(t *testing.T) {
 	user := &TestUser{}
 	apierr := &TestError{}
 
-	res := client.Get(user, apierr, "404")
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
+	req, err := client.NewRequest("404", apierr)
+	if err != nil {
+		t.Fatalf("request errored: %s", err)
+	}
+
+	res, err := req.Get(user)
+	if err != nil {
+		t.Fatalf("response errored: %s", err)
 	}
 
 	assert.Equal(t, 404, res.StatusCode)

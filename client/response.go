@@ -6,71 +6,42 @@ import (
 )
 
 type Response struct {
-	ResponseError error
-	MediaType     *mediatype.MediaType
-	useApiError   bool
+	MediaType  *mediatype.MediaType
+	isApiError bool
 	*http.Response
 }
 
-func (r *Response) IsError() bool {
-	return r.ResponseError != nil
+func (r *Request) Get(output interface{}) (*Response, error) {
+	return r.Do(GetMethod, output)
+}
+
+func (r *Request) Do(method string, output interface{}) (*Response, error) {
+	httpres, err := r.Client.Do(r.Request)
+	if err != nil {
+		return nil, err
+	}
+
+	mtype, err := mediaType(httpres)
+	if err != nil {
+		httpres.Body.Close()
+		return nil, err
+	}
+
+	res := &Response{mtype, UseApiError(httpres.StatusCode), httpres}
+	if mtype != nil {
+		defer res.Body.Close()
+		if res.isApiError {
+			err = mtype.Decode(r.ApiError, res.Body)
+		} else {
+			err = mtype.Decode(output, res.Body)
+		}
+	}
+
+	return res, nil
 }
 
 func (r *Response) IsApiError() bool {
-	return r.useApiError
-}
-
-func (r *Response) Error() string {
-	if r.IsError() {
-		return r.ResponseError.Error()
-	}
-	return ""
-}
-
-func apiResponse(err error) *Response {
-	return &Response{ResponseError: err}
-}
-
-func buildResponse(resource interface{}, apierr interface{}, c *Client, httpres *http.Response, err error) *Response {
-	res := &Response{ResponseError: err, Response: httpres}
-
-	if err != nil {
-		return res
-	}
-
-	defer httpres.Body.Close()
-
-	mt, err := mediaType(httpres)
-	if err != nil {
-		res.ResponseError = err
-		return res
-	}
-
-	res.MediaType = mt
-	res.useApiError = UseApiError(httpres.StatusCode)
-	res.ResponseError = decode(resource, apierr, c, res)
-	return res
-}
-
-func decode(resource interface{}, apierr interface{}, c *Client, res *Response) error {
-	decoder := res.MediaType.Decoder(res.Body)
-	if decoder == nil {
-		return nil
-	}
-
-	if res.useApiError && apierr != nil {
-		return decoder.Decode(apierr)
-	} else if resource != nil {
-		return decoder.Decode(resource)
-	}
-	return nil
-}
-
-func mediaType(res *http.Response) (*mediatype.MediaType, error) {
-	if ctype := res.Header.Get("Content-Type"); len(ctype) > 0 {
-		return mediatype.Parse(ctype)
-	}
-	return nil, nil
+	return r.isApiError
 }
 
 func UseApiError(status int) bool {
@@ -83,4 +54,11 @@ func UseApiError(status int) bool {
 		return false
 	}
 	return true
+}
+
+func mediaType(res *http.Response) (*mediatype.MediaType, error) {
+	if ctype := res.Header.Get("Content-Type"); len(ctype) > 0 {
+		return mediatype.Parse(ctype)
+	}
+	return nil, nil
 }

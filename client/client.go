@@ -46,29 +46,6 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	return New(e, client), nil
 }
 
-func (c *Client) Do(resource interface{}, apierr interface{}, req *http.Request) *Response {
-	httpres, err := c.HttpClient.Do(req)
-	return buildResponse(resource, apierr, c, httpres, err)
-}
-
-func (c *Client) Get(resource interface{}, apierr interface{}, rawurl string) *Response {
-	req, err := c.NewRequest("GET", rawurl, nil)
-	if err != nil {
-		return apiResponse(err)
-	}
-
-	return c.Do(resource, apierr, req)
-}
-
-func (c *Client) NewRequest(method string, rawurl string, body io.Reader) (*http.Request, error) {
-	u, err := c.resolveReferenceString(rawurl)
-	if err != nil {
-		return nil, err
-	}
-
-	return http.NewRequest("GET", u, nil)
-}
-
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	return c.Endpoint.ResolveReference(u)
 }
