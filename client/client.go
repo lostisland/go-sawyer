@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"encoding/json"
+	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
 	"net/url"
@@ -81,14 +82,44 @@ func (c *Client) ResolveReference(u *url.URL) *url.URL {
 }
 
 func (c *Client) decode(resource interface{}, apierr interface{}, res *http.Response) error {
-	// TODO: content type negotiation to find the right decoder
-	dec := c.Decoders["json"](res.Body)
-
 	if UseApiError(res.StatusCode) {
-		return dec.Decode(apierr)
+		return c.decodeResource(apierr, res)
+	}
+	return c.decodeResource(resource, res)
+}
+
+func (c *Client) decodeResource(resource interface{}, res *http.Response) error {
+	if resource == nil {
+		return nil
 	}
 
-	return dec.Decode(resource)
+	dec, err := c.decoder(res)
+	if err != nil {
+		return err
+	} else if dec != nil {
+		return dec.Decode(resource)
+	}
+
+	return nil
+}
+
+func (c *Client) decoder(res *http.Response) (Decoder, error) {
+	mt, err := c.mediaType(res)
+	if err != nil {
+		return nil, err
+	}
+
+	if decfunc, ok := c.Decoders[mt.Format]; ok {
+		return decfunc(res.Body), nil
+	}
+	return nil, nil
+}
+
+func (c *Client) mediaType(res *http.Response) (*mediatype.MediaType, error) {
+	if ctype := res.Header.Get("Content-Type"); len(ctype) > 0 {
+		return mediatype.Parse(ctype)
+	}
+	return nil, nil
 }
 
 func (c *Client) resolveReferenceString(rawurl string) (string, error) {
