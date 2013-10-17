@@ -42,6 +42,19 @@ func TestRequiresDecoder(t *testing.T) {
 	}
 }
 
+func TestSkipsDecoderForNil(t *testing.T) {
+	buf := bytes.NewBufferString("bob")
+	mt, err := Parse("application/test+whatevs")
+	if err != nil {
+		t.Fatalf("Error parsing media type: %s", err.Error())
+	}
+
+	err = mt.Decode(nil, buf)
+	if err != nil {
+		t.Fatalf("Decoding error: %s", err.Error())
+	}
+}
+
 type PersonDecoder struct {
 	body io.Reader
 }

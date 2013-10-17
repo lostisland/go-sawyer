@@ -25,7 +25,7 @@ func (m *MediaType) Decoder(body io.Reader) Decoder {
 }
 
 func (m *MediaType) Decode(v interface{}, body io.Reader) error {
-	if body == nil {
+	if v == nil {
 		return nil
 	}
 
