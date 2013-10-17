@@ -6,6 +6,7 @@ import (
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,37 @@ func TestSuccessfulGetWithoutOutput(t *testing.T) {
 	dec.Decode(user)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
+}
+
+func TestSuccessfulGetWithoutDecoder(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	setup.Mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "GET", r.Method)
+		head := w.Header()
+		head.Set("Content-Type", "application/booya+booya")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id": 1, "login": "sawyer"}`))
+	})
+
+	client := setup.Client
+	user := &TestUser{}
+	apierr := &TestError{}
+
+	req, err := client.NewRequest("user", apierr)
+	if err != nil {
+		t.Fatalf("request errored: %s", err)
+	}
+
+	res := req.Get(user)
+	if !res.IsError() {
+		t.Fatal("No missing decoder error")
+	}
+
+	if !strings.HasPrefix(res.Error(), "No decoder found for format booya") {
+		t.Fatalf("Bad error: %s", err)
+	}
 }
 
 func TestSuccessfulPost(t *testing.T) {
