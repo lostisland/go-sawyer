@@ -29,9 +29,9 @@ func TestSuccessfulGet(t *testing.T) {
 		t.Fatalf("request errored: %s", err)
 	}
 
-	res, err := req.Get(user)
-	if err != nil {
-		t.Fatalf("response errored: %s", err)
+	res := req.Get(user)
+	if res.IsError() {
+		t.Fatalf("response errored: %s", res.Error())
 	}
 
 	assert.Equal(t, 200, res.StatusCode)
@@ -71,9 +71,9 @@ func TestSuccessfulPost(t *testing.T) {
 
 	user.Login = "sawyer"
 	req.SetBody(mtype, user)
-	res, err := req.Post(user)
-	if err != nil {
-		t.Fatalf("response errored: %s", err)
+	res := req.Post(user)
+	if res.IsError() {
+		t.Fatalf("response errored: %s", res.Error())
 	}
 
 	assert.Equal(t, 201, res.StatusCode)
@@ -101,9 +101,9 @@ func TestErrorResponse(t *testing.T) {
 		t.Fatalf("request errored: %s", err)
 	}
 
-	res, err := req.Get(user)
-	if err != nil {
-		t.Fatalf("response errored: %s", err)
+	res := req.Get(user)
+	if res.IsError() {
+		t.Fatalf("response errored: %s", res.Error())
 	}
 
 	assert.Equal(t, 404, res.StatusCode)

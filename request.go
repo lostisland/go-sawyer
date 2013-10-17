@@ -35,31 +35,31 @@ func (c *Client) NewRelation(link *Hyperlink, args M, apierr interface{}) (*Requ
 	return c.NewRequest(u.String(), apierr)
 }
 
-func (r *Request) Head(output interface{}) (*Response, error) {
+func (r *Request) Head(output interface{}) *Response {
 	return r.Do(HeadMethod, output)
 }
 
-func (r *Request) Get(output interface{}) (*Response, error) {
+func (r *Request) Get(output interface{}) *Response {
 	return r.Do(GetMethod, output)
 }
 
-func (r *Request) Post(output interface{}) (*Response, error) {
+func (r *Request) Post(output interface{}) *Response {
 	return r.Do(PostMethod, output)
 }
 
-func (r *Request) Put(output interface{}) (*Response, error) {
+func (r *Request) Put(output interface{}) *Response {
 	return r.Do(PutMethod, output)
 }
 
-func (r *Request) Patch(output interface{}) (*Response, error) {
+func (r *Request) Patch(output interface{}) *Response {
 	return r.Do(PatchMethod, output)
 }
 
-func (r *Request) Delete(output interface{}) (*Response, error) {
+func (r *Request) Delete(output interface{}) *Response {
 	return r.Do(DeleteMethod, output)
 }
 
-func (r *Request) Options(output interface{}) (*Response, error) {
+func (r *Request) Options(output interface{}) *Response {
 	return r.Do(OptionsMethod, output)
 }
 
