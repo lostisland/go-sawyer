@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func TestExpand(t *testing.T) {
+	link := Hyperlink("/foo/bar{/arg}")
+	u, _ := link.Expand(M{"arg": "baz", "foo": "bar"})
+	assert.Equal(t, "/foo/bar/baz", u.String())
+}
+
+func TestExpandNil(t *testing.T) {
+	link := Hyperlink("/foo/bar{/arg}")
+	u, _ := link.Expand(nil)
+	assert.Equal(t, "/foo/bar", u.String())
+}
+
 func TestDecode(t *testing.T) {
 	input := `
 { "Login": "bob"
