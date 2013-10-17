@@ -1,6 +1,7 @@
 package sawyer
 
 import (
+	"encoding/json"
 	"github.com/bmizerany/assert"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
@@ -38,6 +39,45 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
 	assert.Equal(t, "", apierr.Message)
+	assert.Equal(t, true, res.BodyClosed)
+}
+
+func TestSuccessfulGetWithoutOutput(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	setup.Mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "GET", r.Method)
+		head := w.Header()
+		head.Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"id": 1, "login": "sawyer"}`))
+	})
+
+	client := setup.Client
+	user := &TestUser{}
+	apierr := &TestError{}
+
+	req, err := client.NewRequest("user", apierr)
+	if err != nil {
+		t.Fatalf("request errored: %s", err)
+	}
+
+	res := req.Get(nil)
+	if res.IsError() {
+		t.Fatalf("response errored: %s", res.Error())
+	}
+
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, false, res.BodyClosed)
+	assert.Equal(t, 0, user.Id)
+	assert.Equal(t, "", user.Login)
+	assert.Equal(t, "", apierr.Message)
+
+	dec := json.NewDecoder(res.Body)
+	dec.Decode(user)
+	assert.Equal(t, 1, user.Id)
+	assert.Equal(t, "sawyer", user.Login)
 }
 
 func TestSuccessfulPost(t *testing.T) {
@@ -79,6 +119,7 @@ func TestSuccessfulPost(t *testing.T) {
 	assert.Equal(t, 201, res.StatusCode)
 	assert.Equal(t, "sawyer2", user.Login)
 	assert.Equal(t, "", apierr.Message)
+	assert.Equal(t, true, res.BodyClosed)
 }
 
 func TestErrorResponse(t *testing.T) {
@@ -110,6 +151,7 @@ func TestErrorResponse(t *testing.T) {
 	assert.Equal(t, 0, user.Id)
 	assert.Equal(t, "", user.Login)
 	assert.Equal(t, "not found", apierr.Message)
+	assert.Equal(t, true, res.BodyClosed)
 }
 
 func TestResolveRequestQuery(t *testing.T) {

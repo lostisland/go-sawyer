@@ -9,6 +9,7 @@ type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
 	isApiError    bool
+	BodyClosed    bool
 	*http.Response
 }
 
@@ -26,14 +27,9 @@ func (r *Request) Do(method string, output interface{}) *Response {
 		return ResponseError(err)
 	}
 
-	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), httpres}
+	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), false, httpres}
 	if mtype != nil {
-		defer res.Body.Close()
-		if res.isApiError {
-			res.ResponseError = mtype.Decode(r.ApiError, res.Body)
-		} else {
-			res.ResponseError = mtype.Decode(output, res.Body)
-		}
+		res.decode(r.ApiError, output)
 	}
 
 	return res
@@ -58,8 +54,31 @@ func (r *Response) Error() string {
 	return ""
 }
 
+func (r *Response) decode(apierr interface{}, output interface{}) {
+	if r.isApiError {
+		r.decodeResource(apierr)
+	} else {
+		r.decodeResource(output)
+	}
+}
+
+func (r *Response) decodeResource(resource interface{}) {
+	if resource == nil {
+		return
+	}
+
+	dec := r.MediaType.Decoder(r.Body)
+	if dec == nil {
+		return
+	}
+
+	defer r.Body.Close()
+	r.BodyClosed = true
+	r.ResponseError = dec.Decode(resource)
+}
+
 func ResponseError(err error) *Response {
-	return &Response{ResponseError: err}
+	return &Response{ResponseError: err, BodyClosed: true}
 }
 
 func UseApiError(status int) bool {
