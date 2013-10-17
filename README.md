@@ -34,7 +34,7 @@ res := req.Get(user)
 // get the user's repositories
 apierr := &ApiError{}
 repos := new([]Repository)
-req := client.NewRequest(res.Relations["repos"], apierr)
+req := client.NewRequest(res.Hyperlink("repos", sawyer.M{"page": "2"}), apierr)
 res := req.Get(repos)
 
 // post a new user

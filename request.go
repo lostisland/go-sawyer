@@ -28,15 +28,6 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	return &Request{c.HttpClient, apierr, nil, httpreq.URL.Query(), httpreq}, err
 }
 
-func (c *Client) NewRelation(link *Hyperlink, args M, apierr interface{}) (*Request, error) {
-	u, err := link.Expand(args)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.NewRequest(u.String(), apierr)
-}
-
 func (r *Request) Head(output interface{}) *Response {
 	return r.Do(HeadMethod, output)
 }
