@@ -2,6 +2,7 @@ package mediatype
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 )
 
@@ -25,11 +26,15 @@ func (m *MediaType) Encoder(w io.Writer) Encoder {
 }
 
 func (m *MediaType) Encode(v interface{}) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-	if enc := m.Encoder(buf); enc != nil {
-		if err := enc.Encode(v); err != nil {
-			return buf, err
-		}
+	if v == nil {
+		return nil, fmt.Errorf("Nothing to encode")
 	}
-	return buf, nil
+
+	buf := new(bytes.Buffer)
+	enc := m.Encoder(buf)
+	if enc == nil {
+		return buf, fmt.Errorf("No encoder found for format %s (%s)", m.Format, m.String())
+	}
+
+	return buf, enc.Encode(v)
 }
