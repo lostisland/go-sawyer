@@ -1,6 +1,7 @@
 package mediatype
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -24,8 +25,14 @@ func (m *MediaType) Decoder(body io.Reader) Decoder {
 }
 
 func (m *MediaType) Decode(v interface{}, body io.Reader) error {
-	if dec := m.Decoder(body); dec != nil {
-		return dec.Decode(v)
+	if body == nil {
+		return nil
 	}
-	return nil
+
+	dec := m.Decoder(body)
+	if dec == nil {
+		return fmt.Errorf("No decoder found for format %s (%s)", m.Format, m.String())
+	}
+
+	return dec.Decode(v)
 }

@@ -30,13 +30,12 @@ func (r *Request) Do(method string, output interface{}) *Response {
 	if mtype != nil {
 		defer res.Body.Close()
 		if res.isApiError {
-			err = mtype.Decode(r.ApiError, res.Body)
+			res.ResponseError = mtype.Decode(r.ApiError, res.Body)
 		} else {
-			err = mtype.Decode(output, res.Body)
+			res.ResponseError = mtype.Decode(output, res.Body)
 		}
 	}
 
-	res.ResponseError = err
 	return res
 }
 
