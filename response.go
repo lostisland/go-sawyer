@@ -13,6 +13,7 @@ type Response struct {
 }
 
 func (r *Request) Do(method string, output interface{}) *Response {
+	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
 	httpres, err := r.Client.Do(r.Request)
 	if err != nil {

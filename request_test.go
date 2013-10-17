@@ -112,6 +112,44 @@ func TestErrorResponse(t *testing.T) {
 	assert.Equal(t, "not found", apierr.Message)
 }
 
+func TestResolveRequestQuery(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	setup.Mux.HandleFunc("/q", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		assert.Equal(t, "1", q.Get("a"))
+		assert.Equal(t, "4", q.Get("b"))
+		assert.Equal(t, "3", q.Get("c"))
+		assert.Equal(t, "2", q.Get("d"))
+		assert.Equal(t, "1", q.Get("e"))
+		w.WriteHeader(123)
+		w.Write([]byte("ok"))
+	})
+
+	assert.Equal(t, "1", setup.Client.Query.Get("a"))
+	assert.Equal(t, "1", setup.Client.Query.Get("b"))
+
+	setup.Client.Query.Set("b", "2")
+	setup.Client.Query.Set("c", "3")
+
+	req, err := setup.Client.NewRequest("/q?d=4", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	req.Query.Set("b", "4")
+	req.Query.Set("c", "3")
+	req.Query.Set("d", "2")
+	req.Query.Set("e", "1")
+
+	res := req.Get(nil)
+	if res.IsError() {
+		t.Fatal(res.Error())
+	}
+	assert.Equal(t, 123, res.StatusCode)
+}
+
 type TestUser struct {
 	Id    int    `json:"id"`
 	Login string `json:"login"`
@@ -130,7 +168,7 @@ type SetupServer struct {
 func Setup(t *testing.T) *SetupServer {
 	mux := http.NewServeMux()
 	srv := httptest.NewServer(mux)
-	client, err := NewFromString(srv.URL, nil)
+	client, err := NewFromString(srv.URL+"?a=1&b=1", nil)
 
 	if err != nil {
 		t.Fatalf("Unable to parse %s: %s", srv.URL, err.Error())

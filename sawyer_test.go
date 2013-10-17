@@ -67,17 +67,21 @@ func TestResolveWithHeader(t *testing.T) {
 	assert.Equal(t, "private", req.Header.Get("Cache-Control"))
 }
 
-func TestResolveQuery(t *testing.T) {
+func TestResolveClientQuery(t *testing.T) {
 	client, err := NewFromString("http://api.github.com", nil)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
 	u, err := client.ResolveReferenceString("/foo?a=1")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
 	assert.Equal(t, "http://api.github.com/foo?a=1", u)
 }
 
-func TestResolveQueryWithClientQuery(t *testing.T) {
+func TestResolveClientQueryWithClientQuery(t *testing.T) {
 	client, err := NewFromString("http://api.github.com?a=1&b=1", nil)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -89,5 +93,9 @@ func TestResolveQueryWithClientQuery(t *testing.T) {
 	client.Query.Set("b", "2")
 	client.Query.Set("c", "3")
 	u, err := client.ResolveReferenceString("/foo?d=4")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
 	assert.Equal(t, "http://api.github.com/foo?a=1&b=2&c=3&d=4", u)
 }

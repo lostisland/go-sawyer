@@ -4,12 +4,14 @@ import (
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type Request struct {
 	Client    *http.Client
 	ApiError  interface{}
 	MediaType *mediatype.MediaType
+	Query     url.Values
 	*http.Request
 }
 
@@ -23,7 +25,7 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	for key, _ := range c.Header {
 		httpreq.Header.Set(key, c.Header.Get(key))
 	}
-	return &Request{c.HttpClient, apierr, nil, httpreq}, err
+	return &Request{c.HttpClient, apierr, nil, httpreq.URL.Query(), httpreq}, err
 }
 
 func (c *Client) NewRelation(link *Hyperlink, args M, apierr interface{}) (*Request, error) {
