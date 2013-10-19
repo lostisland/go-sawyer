@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jtacoma/uritemplates"
 	"net/url"
+	"reflect"
 )
 
 type Links map[string]Link
@@ -63,3 +64,40 @@ func (r *HALResource) Rel(name string, m M) (*url.URL, error) {
 	}
 	return nil, fmt.Errorf("No %s relation found", name)
 }
+
+type ReflectHypermediaResource struct {
+	rels map[string]Hyperlink
+}
+
+func (r *ReflectHypermediaResource) Rels(resource interface{}) map[string]Hyperlink {
+	if r.rels == nil {
+		r.rels = make(map[string]Hyperlink)
+		t := reflect.TypeOf(resource).Elem()
+		v := reflect.ValueOf(resource).Elem()
+		fieldlen := t.NumField()
+		for i := 0; i < fieldlen; i++ {
+			r.fillRelation(t, v, i)
+		}
+	}
+	return r.rels
+}
+
+func (r *ReflectHypermediaResource) Rel(resource interface{}, name string, m M) (*url.URL, error) {
+	if rel, ok := r.Rels(resource)[name]; ok {
+		return rel.Expand(m)
+	}
+	return nil, fmt.Errorf("No %s relation found", name)
+}
+
+func (r *ReflectHypermediaResource) fillRelation(t reflect.Type, v reflect.Value, index int) {
+	f := t.Field(index)
+
+	if hyperlinkType != f.Type {
+		return
+	}
+
+	hl := v.Field(index).Interface().(Hyperlink)
+	r.rels[f.Name] = hl
+}
+
+var hyperlinkType = reflect.TypeOf(Hyperlink("foo"))

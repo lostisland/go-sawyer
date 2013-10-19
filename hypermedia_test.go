@@ -4,8 +4,36 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/bmizerany/assert"
+	"net/url"
 	"testing"
 )
+
+func TestReflectRelations(t *testing.T) {
+	input := `
+{ "Login": "bob"
+, "Url": "/self"
+, "FooUrl": "/foo"
+, "FooBarUrl": "/bar"
+, "whatever": "/whatevs"
+, "HomepageUrl": "http://example.com"
+}`
+
+	user := &ReflectedUser{}
+	decode(t, input, user)
+
+	rels := user.Rels()
+	assert.Equal(t, 4, len(rels))
+	assert.Equal(t, "/self", string(rels["Url"]))
+	assert.Equal(t, "/foo", string(rels["FooUrl"]))
+	assert.Equal(t, "/bar", string(rels["FooBarUrl"]))
+	assert.Equal(t, "/whatevs", string(rels["Whatever"]))
+
+	rel, err := user.Rel("FooUrl", nil)
+	if err != nil {
+		t.Fatalf("Error getting 'foo' relation: %s", err)
+	}
+	assert.Equal(t, "/foo", rel.Path)
+}
 
 func TestHALRelations(t *testing.T) {
 	input := `
@@ -89,4 +117,28 @@ type HypermediaUser struct {
 	Login string
 	Url   Hyperlink
 	*HALResource
+}
+
+type ReflectedUser struct {
+	Login       string
+	Url         Hyperlink
+	FooUrl      Hyperlink
+	FooBarUrl   Hyperlink
+	Whatever    Hyperlink `json:"whatever"`
+	HomepageUrl string
+	*ReflectHypermediaResource
+}
+
+func (r *ReflectedUser) Rels() map[string]Hyperlink {
+	if r.ReflectHypermediaResource == nil {
+		r.ReflectHypermediaResource = &ReflectHypermediaResource{}
+	}
+	return r.ReflectHypermediaResource.Rels(r)
+}
+
+func (r *ReflectedUser) Rel(name string, m M) (*url.URL, error) {
+	if r.ReflectHypermediaResource == nil {
+		r.ReflectHypermediaResource = &ReflectHypermediaResource{}
+	}
+	return r.ReflectHypermediaResource.Rel(r, name, m)
 }
