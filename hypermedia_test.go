@@ -19,11 +19,7 @@ func TestHALRelations(t *testing.T) {
 }`
 
 	user := &HypermediaUser{}
-	dec := json.NewDecoder(bytes.NewBufferString(input))
-	err := dec.Decode(user)
-	if err != nil {
-		t.Fatalf("Errors decoding json: %s", err)
-	}
+	decode(t, input, user)
 
 	rels := user.Rels()
 	assert.Equal(t, 3, len(rels))
@@ -60,11 +56,7 @@ func TestDecode(t *testing.T) {
 }`
 
 	user := &HypermediaUser{}
-	dec := json.NewDecoder(bytes.NewBufferString(input))
-	err := dec.Decode(user)
-	if err != nil {
-		t.Fatalf("Errors decoding json: %s", err)
-	}
+	decode(t, input, user)
 
 	assert.Equal(t, "bob", user.Login)
 	assert.Equal(t, 1, len(user.Links))
@@ -83,6 +75,14 @@ func TestDecode(t *testing.T) {
 		t.Errorf("Errors parsing %s: %s", hl, err)
 	}
 	assert.Equal(t, "/foo/bar/baz", url.String())
+}
+
+func decode(t *testing.T, input string, resource interface{}) {
+	dec := json.NewDecoder(bytes.NewBufferString(input))
+	err := dec.Decode(resource)
+	if err != nil {
+		t.Fatalf("Errors decoding json: %s", err)
+	}
 }
 
 type HypermediaUser struct {
