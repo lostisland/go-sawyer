@@ -7,6 +7,60 @@ import (
 	"testing"
 )
 
+func TestReflectRelations(t *testing.T) {
+	input := `
+{ "Login": "bob"
+, "Url": "/self"
+, "FooUrl": "/foo"
+, "FooBarUrl": "/bar"
+, "whatever": "/whatevs"
+, "HomepageUrl": "http://example.com"
+}`
+
+	user := &ReflectedUser{}
+	decode(t, input, user)
+
+	rels := HyperFieldDecoder(user)
+	assert.Equal(t, 4, len(rels))
+	assert.Equal(t, "/self", string(rels["Url"]))
+	assert.Equal(t, "/foo", string(rels["FooUrl"]))
+	assert.Equal(t, "/bar", string(rels["FooBarUrl"]))
+	assert.Equal(t, "/whatevs", string(rels["whatevs"]))
+
+	rel, err := rels.Rel("FooUrl", nil)
+	if err != nil {
+		t.Fatalf("Error getting 'foo' relation: %s", err)
+	}
+	assert.Equal(t, "/foo", rel.Path)
+}
+
+func TestHALRelations(t *testing.T) {
+	input := `
+{ "Login": "bob"
+, "Url": "/foo/bar{/arg}"
+, "_links":
+	{ "self": { "href": "/self" }
+	, "foo": { "href": "/foo" }
+	, "bar": { "href": "/bar" }
+	}
+}`
+
+	user := &HypermediaUser{}
+	decode(t, input, user)
+
+	rels := HALDecoder(user)
+	assert.Equal(t, 3, len(rels))
+	assert.Equal(t, "/self", string(rels["self"]))
+	assert.Equal(t, "/foo", string(rels["foo"]))
+	assert.Equal(t, "/bar", string(rels["bar"]))
+
+	rel, err := rels.Rel("foo", nil)
+	if err != nil {
+		t.Fatalf("Error getting 'foo' relation: %s", err)
+	}
+	assert.Equal(t, "/foo", rel.Path)
+}
+
 func TestExpand(t *testing.T) {
 	link := Hyperlink("/foo/bar{/arg}")
 	u, _ := link.Expand(M{"arg": "baz", "foo": "bar"})
@@ -29,11 +83,7 @@ func TestDecode(t *testing.T) {
 }`
 
 	user := &HypermediaUser{}
-	dec := json.NewDecoder(bytes.NewBufferString(input))
-	err := dec.Decode(user)
-	if err != nil {
-		t.Fatalf("Errors decoding json: %s", err)
-	}
+	decode(t, input, user)
 
 	assert.Equal(t, "bob", user.Login)
 	assert.Equal(t, 1, len(user.Links))
@@ -54,8 +104,25 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, "/foo/bar/baz", url.String())
 }
 
+func decode(t *testing.T, input string, resource interface{}) {
+	dec := json.NewDecoder(bytes.NewBufferString(input))
+	err := dec.Decode(resource)
+	if err != nil {
+		t.Fatalf("Errors decoding json: %s", err)
+	}
+}
+
 type HypermediaUser struct {
 	Login string
 	Url   Hyperlink
-	Links Links `json:"_links"`
+	*HALResource
+}
+
+type ReflectedUser struct {
+	Login       string
+	Url         Hyperlink
+	FooUrl      Hyperlink
+	FooBarUrl   Hyperlink
+	Whatever    Hyperlink `json:"whatever" rel:"whatevs"`
+	HomepageUrl string
 }
