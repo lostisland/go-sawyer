@@ -27,14 +27,10 @@ func TestSuccessfulGet(t *testing.T) {
 	apierr := &TestError{}
 
 	req, err := client.NewRequest("user", apierr)
-	if err != nil {
-		t.Fatalf("request errored: %s", err)
-	}
+	assert.Equal(t, nil, err)
 
 	res := req.Get(user)
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
-	}
+	assert.Equal(t, nil, err)
 
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
@@ -60,15 +56,10 @@ func TestSuccessfulGetWithoutOutput(t *testing.T) {
 	apierr := &TestError{}
 
 	req, err := client.NewRequest("user", apierr)
-	if err != nil {
-		t.Fatalf("request errored: %s", err)
-	}
+	assert.Equal(t, nil, err)
 
 	res := req.Get(nil)
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
-	}
-
+	assert.Tf(t, !res.IsError(), "Response shouldn't have error")
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, false, res.BodyClosed)
 	assert.Equal(t, 0, user.Id)
@@ -98,18 +89,11 @@ func TestSuccessfulGetWithoutDecoder(t *testing.T) {
 	apierr := &TestError{}
 
 	req, err := client.NewRequest("user", apierr)
-	if err != nil {
-		t.Fatalf("request errored: %s", err)
-	}
+	assert.Equal(t, nil, err)
 
 	res := req.Get(user)
-	if !res.IsError() {
-		t.Fatal("No missing decoder error")
-	}
-
-	if !strings.HasPrefix(res.Error(), "No decoder found for format booya") {
-		t.Fatalf("Bad error: %s", err)
-	}
+	assert.Tf(t, res.IsError(), "response should have decoder error")
+	assert.Tf(t, strings.HasPrefix(res.Error(), "No decoder found for format booya"), "Bad error: %s", res.Error())
 }
 
 func TestSuccessfulPost(t *testing.T) {
@@ -137,17 +121,12 @@ func TestSuccessfulPost(t *testing.T) {
 	apierr := &TestError{}
 
 	req, err := client.NewRequest("users", apierr)
-	if err != nil {
-		t.Fatalf("request errored: %s", err)
-	}
+	assert.Equal(t, nil, err)
 
 	user.Login = "sawyer"
 	req.SetBody(mtype, user)
 	res := req.Post(user)
-	if res.IsError() {
-		t.Fatalf("response errored: %s", res.Error())
-	}
-
+	assert.Equal(t, nil, err)
 	assert.Equal(t, 201, res.StatusCode)
 	assert.Equal(t, "sawyer2", user.Login)
 	assert.Equal(t, "", apierr.Message)
@@ -208,9 +187,7 @@ func TestResolveRequestQuery(t *testing.T) {
 	setup.Client.Query.Set("c", "3")
 
 	req, err := setup.Client.NewRequest("/q?d=4", nil)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	assert.Equal(t, nil, err)
 
 	req.Query.Set("b", "4")
 	req.Query.Set("c", "3")
@@ -218,9 +195,7 @@ func TestResolveRequestQuery(t *testing.T) {
 	req.Query.Set("e", "1")
 
 	res := req.Get(nil)
-	if res.IsError() {
-		t.Fatal(res.Error())
-	}
+	assert.Equal(t, nil, err)
 	assert.Equal(t, 123, res.StatusCode)
 }
 
@@ -243,10 +218,7 @@ func Setup(t *testing.T) *SetupServer {
 	mux := http.NewServeMux()
 	srv := httptest.NewServer(mux)
 	client, err := NewFromString(srv.URL+"?a=1&b=1", nil)
-
-	if err != nil {
-		t.Fatalf("Unable to parse %s: %s", srv.URL, err.Error())
-	}
+	assert.Equalf(t, nil, err, "Unable to parse %s", srv.URL)
 
 	return &SetupServer{client, srv, mux}
 }
