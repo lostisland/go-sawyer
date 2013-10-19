@@ -36,19 +36,26 @@ func (l *Link) Expand(m M) (*url.URL, error) {
 	return l.Href.Expand(m)
 }
 
-// HypermediaResource describes any REST resource with hypermedia relations.
+type Relations map[string]Hyperlink
+
+func (h Relations) Rel(name string, m M) (*url.URL, error) {
+	if rel, ok := h[name]; ok {
+		return rel.Expand(m)
+	}
+	return nil, fmt.Errorf("No %s relation found", name)
+}
+
 type HypermediaResource interface {
-	Rels() map[string]Hyperlink
-	Rel(string, M) (*url.URL, error)
+	Rels() Relations
 }
 
 // HALResource is a resource with hypermedia specified as JSON HAL.
 type HALResource struct {
 	Links Links `json:"_links"`
-	rels  map[string]Hyperlink
+	rels  Relations
 }
 
-func (r *HALResource) Rels() map[string]Hyperlink {
+func (r *HALResource) Rels() Relations {
 	if r.rels == nil {
 		r.rels = make(map[string]Hyperlink)
 		for name, link := range r.Links {
@@ -58,39 +65,22 @@ func (r *HALResource) Rels() map[string]Hyperlink {
 	return r.rels
 }
 
-func (r *HALResource) Rel(name string, m M) (*url.URL, error) {
-	if rel, ok := r.Rels()[name]; ok {
-		return rel.Expand(m)
+func HALDecoder(res HypermediaResource) Relations {
+	return res.Rels()
+}
+
+func HyperFieldDecoder(res interface{}) Relations {
+	rels := make(Relations)
+	t := reflect.TypeOf(res).Elem()
+	v := reflect.ValueOf(res).Elem()
+	fieldlen := t.NumField()
+	for i := 0; i < fieldlen; i++ {
+		fillRelation(rels, t, v, i)
 	}
-	return nil, fmt.Errorf("No %s relation found", name)
+	return rels
 }
 
-type ReflectHypermediaResource struct {
-	Resource interface{}
-	rels     map[string]Hyperlink
-}
-
-func (r *ReflectHypermediaResource) Rels() map[string]Hyperlink {
-	if r.rels == nil {
-		r.rels = make(map[string]Hyperlink)
-		t := reflect.TypeOf(r.Resource).Elem()
-		v := reflect.ValueOf(r.Resource).Elem()
-		fieldlen := t.NumField()
-		for i := 0; i < fieldlen; i++ {
-			r.fillRelation(t, v, i)
-		}
-	}
-	return r.rels
-}
-
-func (r *ReflectHypermediaResource) Rel(name string, m M) (*url.URL, error) {
-	if rel, ok := r.Rels()[name]; ok {
-		return rel.Expand(m)
-	}
-	return nil, fmt.Errorf("No %s relation found", name)
-}
-
-func (r *ReflectHypermediaResource) fillRelation(t reflect.Type, v reflect.Value, index int) {
+func fillRelation(rels map[string]Hyperlink, t reflect.Type, v reflect.Value, index int) {
 	f := t.Field(index)
 
 	if hyperlinkType != f.Type {
@@ -102,7 +92,7 @@ func (r *ReflectHypermediaResource) fillRelation(t reflect.Type, v reflect.Value
 	if rel := f.Tag.Get("rel"); len(rel) > 0 {
 		name = rel
 	}
-	r.rels[name] = hl
+	rels[name] = hl
 }
 
 var hyperlinkType = reflect.TypeOf(Hyperlink("foo"))

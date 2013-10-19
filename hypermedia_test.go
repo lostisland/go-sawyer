@@ -17,19 +17,17 @@ func TestReflectRelations(t *testing.T) {
 , "HomepageUrl": "http://example.com"
 }`
 
-	user := &ReflectedUser{ReflectHypermediaResource: &ReflectHypermediaResource{}}
-	user.ReflectHypermediaResource.Resource = user
-
+	user := &ReflectedUser{}
 	decode(t, input, user)
 
-	rels := user.Rels()
+	rels := HyperFieldDecoder(user)
 	assert.Equal(t, 4, len(rels))
 	assert.Equal(t, "/self", string(rels["Url"]))
 	assert.Equal(t, "/foo", string(rels["FooUrl"]))
 	assert.Equal(t, "/bar", string(rels["FooBarUrl"]))
 	assert.Equal(t, "/whatevs", string(rels["whatevs"]))
 
-	rel, err := user.Rel("FooUrl", nil)
+	rel, err := rels.Rel("FooUrl", nil)
 	if err != nil {
 		t.Fatalf("Error getting 'foo' relation: %s", err)
 	}
@@ -50,13 +48,13 @@ func TestHALRelations(t *testing.T) {
 	user := &HypermediaUser{}
 	decode(t, input, user)
 
-	rels := user.Rels()
+	rels := HALDecoder(user)
 	assert.Equal(t, 3, len(rels))
 	assert.Equal(t, "/self", string(rels["self"]))
 	assert.Equal(t, "/foo", string(rels["foo"]))
 	assert.Equal(t, "/bar", string(rels["bar"]))
 
-	rel, err := user.Rel("foo", nil)
+	rel, err := rels.Rel("foo", nil)
 	if err != nil {
 		t.Fatalf("Error getting 'foo' relation: %s", err)
 	}
@@ -127,5 +125,4 @@ type ReflectedUser struct {
 	FooBarUrl   Hyperlink
 	Whatever    Hyperlink `json:"whatever" rel:"whatevs"`
 	HomepageUrl string
-	*ReflectHypermediaResource
 }
