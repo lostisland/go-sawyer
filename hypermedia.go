@@ -65,7 +65,7 @@ func (r *HALResource) Rels() Relations {
 	return r.rels
 }
 
-func HALDecoder(res HypermediaResource) Relations {
+func HypermediaDecoder(res HypermediaResource) Relations {
 	return res.Rels()
 }
 
