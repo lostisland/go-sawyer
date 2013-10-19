@@ -25,6 +25,7 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 	for key, _ := range c.Header {
 		httpreq.Header.Set(key, c.Header.Get(key))
 	}
+
 	return &Request{c.HttpClient, apierr, nil, httpreq.URL.Query(), httpreq}, err
 }
 
