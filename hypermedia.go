@@ -98,7 +98,11 @@ func (r *ReflectHypermediaResource) fillRelation(t reflect.Type, v reflect.Value
 	}
 
 	hl := v.Field(index).Interface().(Hyperlink)
-	r.rels[f.Name] = hl
+	name := f.Name
+	if rel := f.Tag.Get("rel"); len(rel) > 0 {
+		name = rel
+	}
+	r.rels[name] = hl
 }
 
 var hyperlinkType = reflect.TypeOf(Hyperlink("foo"))

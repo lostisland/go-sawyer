@@ -27,7 +27,7 @@ func TestReflectRelations(t *testing.T) {
 	assert.Equal(t, "/self", string(rels["Url"]))
 	assert.Equal(t, "/foo", string(rels["FooUrl"]))
 	assert.Equal(t, "/bar", string(rels["FooBarUrl"]))
-	assert.Equal(t, "/whatevs", string(rels["Whatever"]))
+	assert.Equal(t, "/whatevs", string(rels["whatevs"]))
 
 	rel, err := user.Rel("FooUrl", nil)
 	if err != nil {
@@ -125,7 +125,7 @@ type ReflectedUser struct {
 	Url         Hyperlink
 	FooUrl      Hyperlink
 	FooBarUrl   Hyperlink
-	Whatever    Hyperlink `json:"whatever"`
+	Whatever    Hyperlink `json:"whatever" rel:"whatevs"`
 	HomepageUrl string
 	*ReflectHypermediaResource
 }
