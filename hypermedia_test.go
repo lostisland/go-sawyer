@@ -7,6 +7,37 @@ import (
 	"testing"
 )
 
+func TestHALRelations(t *testing.T) {
+	input := `
+{ "Login": "bob"
+, "Url": "/foo/bar{/arg}"
+, "_links":
+	{ "self": { "href": "/self" }
+	, "foo": { "href": "/foo" }
+	, "bar": { "href": "/bar" }
+	}
+}`
+
+	user := &HypermediaUser{}
+	dec := json.NewDecoder(bytes.NewBufferString(input))
+	err := dec.Decode(user)
+	if err != nil {
+		t.Fatalf("Errors decoding json: %s", err)
+	}
+
+	rels := user.Rels()
+	assert.Equal(t, 3, len(rels))
+	assert.Equal(t, "/self", string(rels["self"]))
+	assert.Equal(t, "/foo", string(rels["foo"]))
+	assert.Equal(t, "/bar", string(rels["bar"]))
+
+	rel, err := user.Rel("foo", nil)
+	if err != nil {
+		t.Fatalf("Error getting 'foo' relation: %s", err)
+	}
+	assert.Equal(t, "/foo", rel.Path)
+}
+
 func TestExpand(t *testing.T) {
 	link := Hyperlink("/foo/bar{/arg}")
 	u, _ := link.Expand(M{"arg": "baz", "foo": "bar"})
@@ -57,5 +88,5 @@ func TestDecode(t *testing.T) {
 type HypermediaUser struct {
 	Login string
 	Url   Hyperlink
-	Links Links `json:"_links"`
+	*HALResource
 }
