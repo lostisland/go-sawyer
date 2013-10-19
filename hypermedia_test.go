@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/bmizerany/assert"
-	"net/url"
 	"testing"
 )
 
@@ -18,7 +17,9 @@ func TestReflectRelations(t *testing.T) {
 , "HomepageUrl": "http://example.com"
 }`
 
-	user := &ReflectedUser{}
+	user := &ReflectedUser{ReflectHypermediaResource: &ReflectHypermediaResource{}}
+	user.ReflectHypermediaResource.Resource = user
+
 	decode(t, input, user)
 
 	rels := user.Rels()
@@ -127,18 +128,4 @@ type ReflectedUser struct {
 	Whatever    Hyperlink `json:"whatever"`
 	HomepageUrl string
 	*ReflectHypermediaResource
-}
-
-func (r *ReflectedUser) Rels() map[string]Hyperlink {
-	if r.ReflectHypermediaResource == nil {
-		r.ReflectHypermediaResource = &ReflectHypermediaResource{}
-	}
-	return r.ReflectHypermediaResource.Rels(r)
-}
-
-func (r *ReflectedUser) Rel(name string, m M) (*url.URL, error) {
-	if r.ReflectHypermediaResource == nil {
-		r.ReflectHypermediaResource = &ReflectHypermediaResource{}
-	}
-	return r.ReflectHypermediaResource.Rel(r, name, m)
 }

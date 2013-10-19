@@ -66,14 +66,15 @@ func (r *HALResource) Rel(name string, m M) (*url.URL, error) {
 }
 
 type ReflectHypermediaResource struct {
-	rels map[string]Hyperlink
+	Resource interface{}
+	rels     map[string]Hyperlink
 }
 
-func (r *ReflectHypermediaResource) Rels(resource interface{}) map[string]Hyperlink {
+func (r *ReflectHypermediaResource) Rels() map[string]Hyperlink {
 	if r.rels == nil {
 		r.rels = make(map[string]Hyperlink)
-		t := reflect.TypeOf(resource).Elem()
-		v := reflect.ValueOf(resource).Elem()
+		t := reflect.TypeOf(r.Resource).Elem()
+		v := reflect.ValueOf(r.Resource).Elem()
 		fieldlen := t.NumField()
 		for i := 0; i < fieldlen; i++ {
 			r.fillRelation(t, v, i)
@@ -82,8 +83,8 @@ func (r *ReflectHypermediaResource) Rels(resource interface{}) map[string]Hyperl
 	return r.rels
 }
 
-func (r *ReflectHypermediaResource) Rel(resource interface{}, name string, m M) (*url.URL, error) {
-	if rel, ok := r.Rels(resource)[name]; ok {
+func (r *ReflectHypermediaResource) Rel(name string, m M) (*url.URL, error) {
+	if rel, ok := r.Rels()[name]; ok {
 		return rel.Expand(m)
 	}
 	return nil, fmt.Errorf("No %s relation found", name)
