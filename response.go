@@ -14,28 +14,6 @@ type Response struct {
 	*http.Response
 }
 
-func (r *Request) Do(method string, output interface{}) *Response {
-	r.URL.RawQuery = r.Query.Encode()
-	r.Method = method
-	httpres, err := r.Client.Do(r.Request)
-	if err != nil {
-		return ResponseError(err)
-	}
-
-	mtype, err := mediaType(httpres)
-	if err != nil {
-		httpres.Body.Close()
-		return ResponseError(err)
-	}
-
-	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), false, httpres}
-	if mtype != nil {
-		res.decode(r.ApiError, output)
-	}
-
-	return res
-}
-
 func (r *Response) AnyError() bool {
 	return r.IsError() || r.IsApiError()
 }
