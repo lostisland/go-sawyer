@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 )
 
@@ -25,6 +26,7 @@ type Client struct {
 	Endpoint   *url.URL
 	Header     http.Header
 	Query      url.Values
+	ErrorType  reflect.Type
 }
 
 func New(endpoint *url.URL, client *http.Client) *Client {
@@ -36,7 +38,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query(), nil}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {
@@ -62,6 +64,18 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
+}
+
+func (c *Client) SetError(error interface{}) {
+	c.ErrorType = reflect.TypeOf(error)
+}
+
+func (c *Client) NewError() interface{} {
+	if c.ErrorType == nil {
+		return nil
+	}
+
+	return reflect.New(c.ErrorType).Interface()
 }
 
 func mergeQueries(queries ...url.Values) string {

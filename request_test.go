@@ -24,19 +24,17 @@ func TestSuccessfulGet(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	req, err := client.NewRequest("user", apierr)
+	req, err := client.NewRequest("user")
 	assert.Equal(t, nil, err)
 
 	res := req.Get(user)
-	assert.Equal(t, nil, err)
+	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, false, res.IsApiError())
 
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
-	assert.Equal(t, "", apierr.Message)
-	assert.Equal(t, true, res.BodyClosed)
 }
 
 func TestSuccessfulGetWithoutOutput(t *testing.T) {
@@ -53,18 +51,19 @@ func TestSuccessfulGetWithoutOutput(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	req, err := client.NewRequest("user", apierr)
+	req, err := client.NewRequest("user")
 	assert.Equal(t, nil, err)
 
 	res := req.Get(nil)
+	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, false, res.IsApiError())
+
 	assert.Tf(t, !res.IsError(), "Response shouldn't have error")
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, false, res.BodyClosed)
 	assert.Equal(t, 0, user.Id)
 	assert.Equal(t, "", user.Login)
-	assert.Equal(t, "", apierr.Message)
 
 	dec := json.NewDecoder(res.Body)
 	dec.Decode(user)
@@ -86,9 +85,8 @@ func TestSuccessfulGetWithoutDecoder(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	req, err := client.NewRequest("user", apierr)
+	req, err := client.NewRequest("user")
 	assert.Equal(t, nil, err)
 
 	res := req.Get(user)
@@ -118,18 +116,19 @@ func TestSuccessfulPost(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	req, err := client.NewRequest("users", apierr)
+	req, err := client.NewRequest("users")
 	assert.Equal(t, nil, err)
 
 	user.Login = "sawyer"
 	req.SetBody(mtype, user)
 	res := req.Post(user)
+	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, false, res.IsApiError())
+
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 201, res.StatusCode)
 	assert.Equal(t, "sawyer2", user.Login)
-	assert.Equal(t, "", apierr.Message)
 	assert.Equal(t, true, res.BodyClosed)
 }
 
@@ -146,9 +145,8 @@ func TestErrorResponse(t *testing.T) {
 
 	client := setup.Client
 	user := &TestUser{}
-	apierr := &TestError{}
 
-	req, err := client.NewRequest("404", apierr)
+	req, err := client.NewRequest("404")
 	if err != nil {
 		t.Fatalf("request errored: %s", err)
 	}
@@ -156,6 +154,11 @@ func TestErrorResponse(t *testing.T) {
 	res := req.Get(user)
 	if res.IsError() {
 		t.Fatalf("response errored: %s", res.Error())
+	}
+
+	apierr, ok := res.ApiError.(*TestError)
+	if !ok {
+		t.Fatalf("res.ApiError is not a *TestError")
 	}
 
 	assert.Equal(t, 404, res.StatusCode)
@@ -186,7 +189,7 @@ func TestResolveRequestQuery(t *testing.T) {
 	setup.Client.Query.Set("b", "2")
 	setup.Client.Query.Set("c", "3")
 
-	req, err := setup.Client.NewRequest("/q?d=4", nil)
+	req, err := setup.Client.NewRequest("/q?d=4")
 	assert.Equal(t, nil, err)
 
 	req.Query.Set("b", "4")
@@ -218,6 +221,7 @@ func Setup(t *testing.T) *SetupServer {
 	mux := http.NewServeMux()
 	srv := httptest.NewServer(mux)
 	client, err := NewFromString(srv.URL+"?a=1&b=1", nil)
+	client.SetError(TestError{})
 	assert.Equalf(t, nil, err, "Unable to parse %s", srv.URL)
 
 	return &SetupServer{client, srv, mux}

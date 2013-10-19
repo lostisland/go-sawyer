@@ -9,13 +9,13 @@ import (
 
 type Request struct {
 	Client    *http.Client
-	ApiError  interface{}
 	MediaType *mediatype.MediaType
 	Query     url.Values
+	errorFunc func() interface{}
 	*http.Request
 }
 
-func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error) {
+func (c *Client) NewRequest(rawurl string) (*Request, error) {
 	u, err := c.ResolveReferenceString(rawurl)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (c *Client) NewRequest(rawurl string, apierr interface{}) (*Request, error)
 		httpreq.Header.Set(key, c.Header.Get(key))
 	}
 
-	return &Request{c.HttpClient, apierr, nil, httpreq.URL.Query(), httpreq}, err
+	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.NewError, httpreq}, err
 }
 
 func (r *Request) Do(method string, output interface{}) *Response {
@@ -43,9 +43,9 @@ func (r *Request) Do(method string, output interface{}) *Response {
 		return ResponseError(err)
 	}
 
-	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), false, httpres}
+	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), nil, false, r.errorFunc, httpres}
 	if mtype != nil {
-		res.decode(r.ApiError, output)
+		res.decode(output)
 	}
 
 	return res

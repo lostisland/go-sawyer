@@ -10,7 +10,9 @@ type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
 	isApiError    bool
+	ApiError      interface{}
 	BodyClosed    bool
+	errorFunc     func() interface{}
 	*http.Response
 }
 
@@ -23,7 +25,7 @@ func (r *Response) IsError() bool {
 }
 
 func (r *Response) IsApiError() bool {
-	return r.isApiError
+	return r.ApiError != nil
 }
 
 func (r *Response) Error() string {
@@ -33,9 +35,10 @@ func (r *Response) Error() string {
 	return ""
 }
 
-func (r *Response) decode(apierr interface{}, output interface{}) {
+func (r *Response) decode(output interface{}) {
 	if r.isApiError {
-		r.decodeResource(apierr)
+		r.ApiError = r.errorFunc()
+		r.decodeResource(r.ApiError)
 	} else {
 		r.decodeResource(output)
 	}

@@ -47,7 +47,7 @@ func TestResolveWithNoHeader(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	req, _ := client.NewRequest("", nil)
+	req, _ := client.NewRequest("")
 	assert.Equal(t, 0, len(req.Header))
 
 	req.Header.Set("Cache-Control", "private")
@@ -62,7 +62,7 @@ func TestResolveWithHeader(t *testing.T) {
 	}
 	client.Header.Set("Cache-Control", "private")
 
-	req, _ := client.NewRequest("", nil)
+	req, _ := client.NewRequest("")
 	assert.Equal(t, 1, len(req.Header))
 	assert.Equal(t, "private", req.Header.Get("Cache-Control"))
 }
