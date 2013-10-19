@@ -18,11 +18,11 @@ func AddEncoder(format string, encfunc EncoderFunc) {
 	encoders[format] = encfunc
 }
 
-func (m *MediaType) Encoder(w io.Writer) Encoder {
+func (m *MediaType) Encoder(w io.Writer) (Encoder, error) {
 	if encfunc, ok := encoders[m.Format]; ok {
-		return encfunc(w)
+		return encfunc(w), nil
 	}
-	return nil
+	return nil, fmt.Errorf("No encoder found for format %s (%s)", m.Format, m.String())
 }
 
 func (m *MediaType) Encode(v interface{}) (*bytes.Buffer, error) {
@@ -31,9 +31,9 @@ func (m *MediaType) Encode(v interface{}) (*bytes.Buffer, error) {
 	}
 
 	buf := new(bytes.Buffer)
-	enc := m.Encoder(buf)
-	if enc == nil {
-		return buf, fmt.Errorf("No encoder found for format %s (%s)", m.Format, m.String())
+	enc, err := m.Encoder(buf)
+	if err != nil {
+		return buf, err
 	}
 
 	return buf, enc.Encode(v)

@@ -17,11 +17,11 @@ func AddDecoder(format string, decfunc DecoderFunc) {
 	decoders[format] = decfunc
 }
 
-func (m *MediaType) Decoder(body io.Reader) Decoder {
+func (m *MediaType) Decoder(body io.Reader) (Decoder, error) {
 	if decfunc, ok := decoders[m.Format]; ok {
-		return decfunc(body)
+		return decfunc(body), nil
 	}
-	return nil
+	return nil, fmt.Errorf("No decoder found for format %s (%s)", m.Format, m.String())
 }
 
 func (m *MediaType) Decode(v interface{}, body io.Reader) error {
@@ -29,9 +29,9 @@ func (m *MediaType) Decode(v interface{}, body io.Reader) error {
 		return nil
 	}
 
-	dec := m.Decoder(body)
-	if dec == nil {
-		return fmt.Errorf("No decoder found for format %s (%s)", m.Format, m.String())
+	dec, err := m.Decoder(body)
+	if err != nil {
+		return err
 	}
 
 	return dec.Decode(v)
