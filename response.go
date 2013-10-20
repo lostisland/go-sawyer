@@ -1,7 +1,6 @@
 package sawyer
 
 import (
-	"fmt"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 )
@@ -52,10 +51,9 @@ func (r *Response) decodeResource(resource interface{}) {
 	defer r.Body.Close()
 	r.BodyClosed = true
 
-	dec := r.MediaType.Decoder(r.Body)
-	if dec == nil {
-		r.ResponseError = fmt.Errorf("No decoder found for format %s (%s)",
-			r.MediaType.Format, r.MediaType.String())
+	dec, err := r.MediaType.Decoder(r.Body)
+	if err != nil {
+		r.ResponseError = err
 	} else {
 		r.ResponseError = dec.Decode(resource)
 	}
