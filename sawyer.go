@@ -66,18 +66,6 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 	return c.ResolveReference(u).String(), nil
 }
 
-func (c *Client) SetError(error interface{}) {
-	c.ErrorType = reflect.TypeOf(error)
-}
-
-func (c *Client) NewError() interface{} {
-	if c.ErrorType == nil {
-		return nil
-	}
-
-	return reflect.New(c.ErrorType).Interface()
-}
-
 func mergeQueries(queries ...url.Values) string {
 	merged := make(url.Values)
 	for _, q := range queries {

@@ -11,7 +11,6 @@ type Request struct {
 	Client    *http.Client
 	MediaType *mediatype.MediaType
 	Query     url.Values
-	errorFunc func() interface{}
 	*http.Request
 }
 
@@ -26,10 +25,10 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 		httpreq.Header.Set(key, c.Header.Get(key))
 	}
 
-	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.NewError, httpreq}, err
+	return &Request{c.HttpClient, nil, httpreq.URL.Query(), httpreq}, err
 }
 
-func (r *Request) Do(method string, output interface{}) *Response {
+func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
 	httpres, err := r.Client.Do(r.Request)
@@ -43,40 +42,35 @@ func (r *Request) Do(method string, output interface{}) *Response {
 		return ResponseError(err)
 	}
 
-	res := &Response{nil, mtype, UseApiError(httpres.StatusCode), nil, false, r.errorFunc, httpres}
-	if mtype != nil {
-		res.decode(output)
-	}
-
-	return res
+	return &Response{nil, mtype, UseApiError(httpres.StatusCode), false, httpres}
 }
 
-func (r *Request) Head(output interface{}) *Response {
-	return r.Do(HeadMethod, output)
+func (r *Request) Head() *Response {
+	return r.Do(HeadMethod)
 }
 
-func (r *Request) Get(output interface{}) *Response {
-	return r.Do(GetMethod, output)
+func (r *Request) Get() *Response {
+	return r.Do(GetMethod)
 }
 
-func (r *Request) Post(output interface{}) *Response {
-	return r.Do(PostMethod, output)
+func (r *Request) Post() *Response {
+	return r.Do(PostMethod)
 }
 
-func (r *Request) Put(output interface{}) *Response {
-	return r.Do(PutMethod, output)
+func (r *Request) Put() *Response {
+	return r.Do(PutMethod)
 }
 
-func (r *Request) Patch(output interface{}) *Response {
-	return r.Do(PatchMethod, output)
+func (r *Request) Patch() *Response {
+	return r.Do(PatchMethod)
 }
 
-func (r *Request) Delete(output interface{}) *Response {
-	return r.Do(DeleteMethod, output)
+func (r *Request) Delete() *Response {
+	return r.Do(DeleteMethod)
 }
 
-func (r *Request) Options(output interface{}) *Response {
-	return r.Do(OptionsMethod, output)
+func (r *Request) Options() *Response {
+	return r.Do(OptionsMethod)
 }
 
 func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
