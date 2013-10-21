@@ -1,6 +1,7 @@
 package sawyer
 
 import (
+	"errors"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 )
@@ -9,9 +10,7 @@ type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
 	isApiError    bool
-	ApiError      interface{}
 	BodyClosed    bool
-	errorFunc     func() interface{}
 	*http.Response
 }
 
@@ -24,7 +23,7 @@ func (r *Response) IsError() bool {
 }
 
 func (r *Response) IsApiError() bool {
-	return r.ApiError != nil
+	return r.isApiError
 }
 
 func (r *Response) Error() string {
@@ -34,18 +33,13 @@ func (r *Response) Error() string {
 	return ""
 }
 
-func (r *Response) decode(output interface{}) {
-	if r.isApiError {
-		r.ApiError = r.errorFunc()
-		r.decodeResource(r.ApiError)
-	} else {
-		r.decodeResource(output)
+func (r *Response) Decode(resource interface{}) error {
+	if r.MediaType == nil {
+		return errors.New("No media type for this response")
 	}
-}
 
-func (r *Response) decodeResource(resource interface{}) {
-	if resource == nil {
-		return
+	if resource == nil || r.ResponseError != nil || r.BodyClosed {
+		return r.ResponseError
 	}
 
 	defer r.Body.Close()
@@ -56,6 +50,13 @@ func (r *Response) decodeResource(resource interface{}) {
 		r.ResponseError = err
 	} else {
 		r.ResponseError = dec.Decode(resource)
+	}
+	return r.ResponseError
+}
+
+func (r *Response) decode(output interface{}) {
+	if !r.isApiError {
+		r.Decode(output)
 	}
 }
 
