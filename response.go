@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"errors"
+	"github.com/lostisland/go-sawyer/mediaheader"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 )
@@ -9,6 +10,7 @@ import (
 type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
+	MediaHeader   *mediaheader.MediaHeader
 	isApiError    bool
 	BodyClosed    bool
 	*http.Response
