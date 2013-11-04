@@ -18,6 +18,8 @@ func TestSuccessfulGet(t *testing.T) {
 		assert.Equal(t, "GET", r.Method)
 		head := w.Header()
 		head.Set("Content-Type", "application/json")
+		link := `<https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"`
+		head.Set("Link", link)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"id": 1, "login": "sawyer"}`))
 	})
@@ -36,6 +38,10 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
+
+	mheader := res.MediaHeader
+	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(mheader.Relations["next"]))
+	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(mheader.Relations["last"]))
 }
 
 func TestSuccessfulGetWithoutOutput(t *testing.T) {
