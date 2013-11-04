@@ -63,7 +63,7 @@ func TestHALRelations(t *testing.T) {
 
 func TestExpand(t *testing.T) {
 	link := Hyperlink("/foo/bar{/arg}")
-	u, _ := link.Expand(map[string]interface{}{"arg": "baz", "foo": "bar"})
+	u, _ := link.Expand(M{"arg": "baz", "foo": "bar"})
 	assert.Equal(t, "/foo/bar/baz", u.String())
 }
 
@@ -89,7 +89,7 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, 1, len(user.Links))
 
 	hl := user.Url
-	url, err := hl.Expand(map[string]interface{}{"arg": "baz"})
+	url, err := hl.Expand(M{"arg": "baz"})
 	if err != nil {
 		t.Errorf("Errors parsing %s: %s", hl, err)
 	}
@@ -97,7 +97,7 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, "/foo/bar/baz", url.String())
 
 	hl = user.Links["self"].Href
-	url, err = hl.Expand(map[string]interface{}{"arg": "baz"})
+	url, err = hl.Expand(M{"arg": "baz"})
 	if err != nil {
 		t.Errorf("Errors parsing %s: %s", hl, err)
 	}
