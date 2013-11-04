@@ -1,4 +1,4 @@
-package sawyer
+package hypermedia
 
 import (
 	"bytes"
