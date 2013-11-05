@@ -13,9 +13,11 @@ type Link struct {
 	Href Hyperlink `json:"href"`
 }
 
+type M map[string]interface{}
+
 type Hyperlink string
 
-func (l *Hyperlink) Expand(m map[string]interface{}) (*url.URL, error) {
+func (l *Hyperlink) Expand(m M) (*url.URL, error) {
 	template, err := uritemplates.Parse(string(*l))
 	if err != nil {
 		return nil, err
@@ -29,13 +31,13 @@ func (l *Hyperlink) Expand(m map[string]interface{}) (*url.URL, error) {
 	return url.ParseRequestURI(expanded)
 }
 
-func (l *Link) Expand(m map[string]interface{}) (*url.URL, error) {
+func (l *Link) Expand(m M) (*url.URL, error) {
 	return l.Href.Expand(m)
 }
 
 type Relations map[string]Hyperlink
 
-func (h Relations) Rel(name string, m map[string]interface{}) (*url.URL, error) {
+func (h Relations) Rel(name string, m M) (*url.URL, error) {
 	if rel, ok := h[name]; ok {
 		return rel.Expand(m)
 	}
