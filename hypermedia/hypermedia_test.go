@@ -55,21 +55,21 @@ func TestHALRelations(t *testing.T) {
 	assert.Equal(t, "/bar", string(rels["bar"]))
 
 	rel, err := rels.Rel("foo", nil)
-	if err != nil {
-		t.Fatalf("Error getting 'foo' relation: %s", err)
-	}
+	assert.Equal(t, nil, err)
 	assert.Equal(t, "/foo", rel.Path)
 }
 
 func TestExpand(t *testing.T) {
 	link := Hyperlink("/foo/bar{/arg}")
-	u, _ := link.Expand(M{"arg": "baz", "foo": "bar"})
+	u, err := link.Expand(M{"arg": "baz", "foo": "bar"})
+	assert.Equal(t, nil, err)
 	assert.Equal(t, "/foo/bar/baz", u.String())
 }
 
 func TestExpandNil(t *testing.T) {
 	link := Hyperlink("/foo/bar{/arg}")
-	u, _ := link.Expand(nil)
+	u, err := link.Expand(nil)
+	assert.Equal(t, nil, err)
 	assert.Equal(t, "/foo/bar", u.String())
 }
 

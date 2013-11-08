@@ -17,8 +17,8 @@ type M map[string]interface{}
 
 type Hyperlink string
 
-func (l *Hyperlink) Expand(m M) (*url.URL, error) {
-	template, err := uritemplates.Parse(string(*l))
+func (l Hyperlink) Expand(m M) (*url.URL, error) {
+	template, err := uritemplates.Parse(string(l))
 	if err != nil {
 		return nil, err
 	}
