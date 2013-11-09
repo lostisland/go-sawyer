@@ -17,13 +17,22 @@ type M map[string]interface{}
 
 type Hyperlink string
 
-func (l *Hyperlink) Expand(m M) (*url.URL, error) {
-	template, err := uritemplates.Parse(string(*l))
+func (l Hyperlink) Expand(m M) (*url.URL, error) {
+	template, err := uritemplates.Parse(string(l))
 	if err != nil {
 		return nil, err
 	}
 
-	expanded, err := template.Expand(m)
+	// clone M to map[string]interface{}
+	// if we don't do this type assertion will
+	// fail on jtacoma/uritemplates
+	// see https://github.com/jtacoma/uritemplates/blob/master/uritemplates.go#L189
+	mm := make(map[string]interface{}, len(m))
+	for k, v := range m {
+		mm[k] = v
+	}
+
+	expanded, err := template.Expand(mm)
 	if err != nil {
 		return nil, err
 	}
