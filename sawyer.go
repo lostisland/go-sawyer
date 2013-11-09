@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 )
 
@@ -26,7 +25,6 @@ type Client struct {
 	Endpoint   *url.URL
 	Header     http.Header
 	Query      url.Values
-	ErrorType  reflect.Type
 }
 
 func New(endpoint *url.URL, client *http.Client) *Client {
@@ -38,7 +36,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query(), nil}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
 }
 
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {
