@@ -23,7 +23,11 @@ func (l Hyperlink) Expand(m M) (*url.URL, error) {
 		return nil, err
 	}
 
-	mm := make(map[string]interface{})
+	// clone M to map[string]interface{}
+	// if we don't do this type assertion will
+	// fail on jtacoma/uritemplates
+	// see https://github.com/jtacoma/uritemplates/blob/master/uritemplates.go#L189
+	mm := make(map[string]interface{}, len(m))
 	for k, v := range m {
 		mm[k] = v
 	}
