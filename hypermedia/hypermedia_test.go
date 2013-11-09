@@ -28,9 +28,7 @@ func TestReflectRelations(t *testing.T) {
 	assert.Equal(t, "/whatevs", string(rels["whatevs"]))
 
 	rel, err := rels.Rel("FooUrl", nil)
-	if err != nil {
-		t.Fatalf("Error getting 'foo' relation: %s", err)
-	}
+	assert.Equal(t, nil, err)
 	assert.Equal(t, "/foo", rel.Path)
 }
 

@@ -23,7 +23,12 @@ func (l Hyperlink) Expand(m M) (*url.URL, error) {
 		return nil, err
 	}
 
-	expanded, err := template.Expand(m)
+	mm := make(map[string]interface{})
+	for k, v := range m {
+		mm[k] = v
+	}
+
+	expanded, err := template.Expand(mm)
 	if err != nil {
 		return nil, err
 	}
