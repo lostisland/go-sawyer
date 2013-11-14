@@ -9,17 +9,11 @@ import (
 	"strings"
 )
 
+// The default httpClient used if one isn't specified.
 var httpClient = &http.Client{}
 
-func init() {
-	mediatype.AddDecoder("json", func(r io.Reader) mediatype.Decoder {
-		return json.NewDecoder(r)
-	})
-	mediatype.AddEncoder("json", func(w io.Writer) mediatype.Encoder {
-		return json.NewEncoder(w)
-	})
-}
-
+// A Client wraps an *http.Client with a base url Endpoint and common header and
+// query values.
 type Client struct {
 	HttpClient *http.Client
 	Endpoint   *url.URL
@@ -27,6 +21,7 @@ type Client struct {
 	Query      url.Values
 }
 
+// New returns a new Client with a given a URL and an optional client.
 func New(endpoint *url.URL, client *http.Client) *Client {
 	if client == nil {
 		client = httpClient
@@ -39,6 +34,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
 }
 
+// NewFromString returns a new Client given a string URL and an optional client.
 func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	e, err := url.Parse(endpoint)
 	if err != nil {
@@ -48,6 +44,8 @@ func NewFromString(endpoint string, client *http.Client) (*Client, error) {
 	return New(e, client), nil
 }
 
+// ResolveReference resolves a URI reference to an absolute URI from an absolute
+// base URI.  It also merges the query values.
 func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	absurl := c.Endpoint.ResolveReference(u)
 	if len(c.Query) > 0 {
@@ -56,6 +54,8 @@ func (c *Client) ResolveReference(u *url.URL) *url.URL {
 	return absurl
 }
 
+// ResolveReference resolves a string URI reference to an absolute URI from an
+// absolute base URI.  It also merges the query values.
 func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
@@ -76,4 +76,13 @@ func mergeQueries(queries ...url.Values) string {
 		}
 	}
 	return merged.Encode()
+}
+
+func init() {
+	mediatype.AddDecoder("json", func(r io.Reader) mediatype.Decoder {
+		return json.NewDecoder(r)
+	})
+	mediatype.AddEncoder("json", func(w io.Writer) mediatype.Encoder {
+		return json.NewEncoder(w)
+	})
 }

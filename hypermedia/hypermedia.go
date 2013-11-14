@@ -1,3 +1,5 @@
+// Package hypermedia provides helpers for parsing hypermedia links in resources
+// and expanding the links to make further requests.
 package hypermedia
 
 import (
@@ -7,16 +9,11 @@ import (
 	"reflect"
 )
 
-type Links map[string]Link
-
-type Link struct {
-	Href Hyperlink `json:"href"`
-}
-
-type M map[string]interface{}
-
+// Hyperlink is a string url.  If it is a uri template, it can be converted to
+// a full URL with Expand().
 type Hyperlink string
 
+// Expand converts a uri template into a url.URL using the given M map.
 func (l Hyperlink) Expand(m M) (*url.URL, error) {
 	template, err := uritemplates.Parse(string(l))
 	if err != nil {
@@ -40,12 +37,13 @@ func (l Hyperlink) Expand(m M) (*url.URL, error) {
 	return url.ParseRequestURI(expanded)
 }
 
-func (l *Link) Expand(m M) (*url.URL, error) {
-	return l.Href.Expand(m)
-}
+// M represents a map of values to expand a Hyperlink.
+type M map[string]interface{}
 
+// Relations is a map of keys that point to Hyperlink objects.
 type Relations map[string]Hyperlink
 
+// Rel fetches and expands the Hyperlink by its given key in the Relations map.
 func (h Relations) Rel(name string, m M) (*url.URL, error) {
 	if rel, ok := h[name]; ok {
 		return rel.Expand(m)
@@ -53,16 +51,25 @@ func (h Relations) Rel(name string, m M) (*url.URL, error) {
 	return nil, fmt.Errorf("No %s relation found", name)
 }
 
+// A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
 	Rels() Relations
 }
 
+// The HypermediaDecoder gets the link relations from any HypermediaResource.
+func HypermediaDecoder(res HypermediaResource) Relations {
+	return res.Rels()
+}
+
 // HALResource is a resource with hypermedia specified as JSON HAL.
+//
+// http://stateless.co/hal_specification.html
 type HALResource struct {
 	Links Links `json:"_links"`
 	rels  Relations
 }
 
+// Rels gets the link relations from the HALResource's Links field.
 func (r *HALResource) Rels() Relations {
 	if r.rels == nil {
 		r.rels = make(map[string]Hyperlink)
@@ -73,10 +80,22 @@ func (r *HALResource) Rels() Relations {
 	return r.rels
 }
 
-func HypermediaDecoder(res HypermediaResource) Relations {
-	return res.Rels()
+// Links is a collection of Link objects in a HALResource.  Note that the HAL
+// spec allows single link objects or an array of link objects.  Sawyer
+// currently only supports single link objects.
+type Links map[string]Link
+
+// Link represents a single link in a HALResource.
+type Link struct {
+	Href Hyperlink `json:"href"`
 }
 
+// Expand converts a uri template into a url.URL using the given M map.
+func (l *Link) Expand(m M) (*url.URL, error) {
+	return l.Href.Expand(m)
+}
+
+// The HyperFieldDecoder
 func HyperFieldDecoder(res interface{}) Relations {
 	rels := make(Relations)
 	t := reflect.TypeOf(res).Elem()
