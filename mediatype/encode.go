@@ -36,7 +36,7 @@ func (m *MediaType) Encoder(w io.Writer) (Encoder, error) {
 	return nil, fmt.Errorf("No encoder found for format %s (%s)", m.Format, m.String())
 }
 
-// Encode uses this MediaType's Encoder to encodes the given value into a
+// Encode uses this MediaType's Encoder to encode the given value into a
 // bytes.Buffer.
 func (m *MediaType) Encode(v interface{}) (*bytes.Buffer, error) {
 	if v == nil {
