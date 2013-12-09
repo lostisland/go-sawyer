@@ -2,6 +2,7 @@ package sawyer
 
 import (
 	"github.com/bmizerany/assert"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/url"
 	"testing"
 )
@@ -111,4 +112,20 @@ func TestResolveClientRelativeReference(t *testing.T) {
 	}
 
 	assert.Equal(t, "http://github.enterprise.com/api/v3/users", u)
+}
+
+func TestResolveClientRelativeHyperlink(t *testing.T) {
+	client, err := NewFromString("http://github.enterprise.com/api/v3/", nil)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	link := hypermedia.Hyperlink("repos/{repo}")
+	expanded, err := link.Expand(hypermedia.M{"repo": "foo"})
+
+	u, err := client.ResolveReferenceString(expanded.String())
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	assert.Equal(t, "http://github.enterprise.com/api/v3/repos/foo", u)
 }
