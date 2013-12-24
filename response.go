@@ -16,6 +16,19 @@ type Response struct {
 	*http.Response
 }
 
+func BuildResponse(httpres *http.Response) *Response {
+	mtype, err := mediaType(httpres)
+	if err != nil {
+		httpres.Body.Close()
+		return ResponseError(err)
+	}
+
+	headerDecoder := mediaheader.Decoder{}
+	mheader := headerDecoder.Decode(httpres.Header)
+
+	return &Response{nil, mtype, mheader, UseApiError(httpres.StatusCode), false, httpres}
+}
+
 func (r *Response) AnyError() bool {
 	return r.IsError() || r.IsApiError()
 }
