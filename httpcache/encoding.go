@@ -26,9 +26,21 @@ type Response struct {
 func Encode(res *sawyer.Response, writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 
-	resCopy := Response{res.Status, res.StatusCode, res.Proto, res.ProtoMajor,
-		res.ProtoMinor, res.Header, res.ContentLength, res.TransferEncoding,
-		res.Trailer, *res.MediaType}
+	resCopy := Response{
+		Status:           res.Status,
+		StatusCode:       res.StatusCode,
+		Proto:            res.Proto,
+		ProtoMajor:       res.ProtoMajor,
+		ProtoMinor:       res.ProtoMinor,
+		Header:           res.Header,
+		ContentLength:    res.ContentLength,
+		TransferEncoding: res.TransferEncoding,
+		Trailer:          res.Trailer,
+	}
+
+	if res.MediaType != nil {
+		resCopy.MediaType = *res.MediaType
+	}
 
 	return enc.Encode(&resCopy)
 }

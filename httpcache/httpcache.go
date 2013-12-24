@@ -12,12 +12,12 @@ import (
 // Get retrieves a Response for a REST resource by its URL.  The URL should be
 // the full canonical URL for the resource.  The response will be nil if it is
 // expired.
-func Get(url string) (*sawyer.Response, error) {
-	return nil, errors.New("Not Implemented")
+func Get(url string, v interface{}) *sawyer.Response {
+	return sawyer.ResponseError(errors.New("Not Implemented"))
 }
 
 // Set caches a Response for a resource by its URL.
-func Set(url string, res *sawyer.Response) error {
+func Set(url string, res *sawyer.Response, v interface{}) error {
 	return errors.New("Not Implemented")
 
 }
