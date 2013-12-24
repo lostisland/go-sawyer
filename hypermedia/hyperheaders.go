@@ -1,22 +1,19 @@
-package mediaheader
+package hypermedia
 
 import (
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-// TODO: need a full link header parser for http://tools.ietf.org/html/rfc5988
-type Decoder struct {
-}
-
-func (d *Decoder) Decode(header http.Header) (mediaHeader *MediaHeader) {
-	mediaHeader = &MediaHeader{Relations: hypermedia.Relations{}}
+func HyperHeaderRelations(header http.Header, rels Relations) Relations {
+	if rels == nil {
+		rels = make(Relations)
+	}
 
 	link := header.Get("Link")
 	if len(link) == 0 {
-		return
+		return rels
 	}
 
 	for _, l := range strings.Split(link, ",") {
@@ -36,21 +33,21 @@ func (d *Decoder) Decode(header http.Header) (mediaHeader *MediaHeader) {
 			continue
 		}
 
-		link := hypermedia.Hyperlink(url.String())
+		link := Hyperlink(url.String())
 
 		for _, segment := range segments[1:] {
 			switch strings.TrimSpace(segment) {
 			case `rel="next"`:
-				mediaHeader.Relations["next"] = link
+				rels["next"] = link
 			case `rel="prev"`:
-				mediaHeader.Relations["prev"] = link
+				rels["prev"] = link
 			case `rel="first"`:
-				mediaHeader.Relations["first"] = link
+				rels["first"] = link
 			case `rel="last"`:
-				mediaHeader.Relations["last"] = link
+				rels["last"] = link
 			}
 		}
 	}
 
-	return
+	return rels
 }

@@ -16,11 +16,19 @@ type HALResource struct {
 func (r *HALResource) Rels() Relations {
 	if r.rels == nil {
 		r.rels = make(map[string]Hyperlink)
-		for name, link := range r.Links {
-			r.rels[name] = link.Href
-		}
+		r.FillRels(r.rels)
 	}
 	return r.rels
+}
+
+func (r *HALResource) FillRels(rels Relations) {
+	if r.Links == nil {
+		return
+	}
+
+	for name, link := range r.Links {
+		rels[name] = link.Href
+	}
 }
 
 // Links is a collection of Link objects in a HALResource.  Note that the HAL

@@ -7,6 +7,9 @@ import (
 	"testing"
 )
 
+func TestCombinedRelations(t *testing.T) {
+}
+
 func TestReflectRelations(t *testing.T) {
 	input := `
 { "Login": "bob"
@@ -20,7 +23,7 @@ func TestReflectRelations(t *testing.T) {
 	user := &ReflectedUser{}
 	decode(t, input, user)
 
-	rels := HyperFieldDecoder(user)
+	rels := HyperFieldRelations(user, nil)
 	assert.Equal(t, 4, len(rels))
 	assert.Equal(t, "/self", string(rels["Url"]))
 	assert.Equal(t, "/foo", string(rels["FooUrl"]))
@@ -46,7 +49,7 @@ func TestHALRelations(t *testing.T) {
 	user := &HypermediaUser{}
 	decode(t, input, user)
 
-	rels := HypermediaDecoder(user)
+	rels := user.Rels()
 	assert.Equal(t, 3, len(rels))
 	assert.Equal(t, "/self", string(rels["self"]))
 	assert.Equal(t, "/foo", string(rels["foo"]))

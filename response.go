@@ -2,7 +2,7 @@ package sawyer
 
 import (
 	"errors"
-	"github.com/lostisland/go-sawyer/mediaheader"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 )
@@ -10,9 +10,9 @@ import (
 type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
-	MediaHeader   *mediaheader.MediaHeader
 	isApiError    bool
 	BodyClosed    bool
+	Rels          hypermedia.Relations
 	*http.Response
 }
 
@@ -53,12 +53,33 @@ func (r *Response) Decode(resource interface{}) error {
 	} else {
 		r.ResponseError = dec.Decode(resource)
 	}
+
+	if r.ResponseError == nil {
+		r.fillRells(resource)
+	}
+
 	return r.ResponseError
 }
 
 func (r *Response) decode(output interface{}) {
 	if !r.isApiError {
 		r.Decode(output)
+	}
+}
+
+func (r *Response) fillRells(v interface{}) {
+	if v == nil {
+		return
+	}
+
+	if r.Rels == nil {
+		r.Rels = hypermedia.Relations{}
+	}
+
+	hypermedia.HyperFieldRelations(v, r.Rels)
+
+	if hal, ok := v.(hypermedia.HypermediaResource); ok {
+		hal.FillRels(r.Rels)
 	}
 }
 

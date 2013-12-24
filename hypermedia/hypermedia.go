@@ -53,24 +53,5 @@ func (h Relations) Rel(name string, m M) (*url.URL, error) {
 // A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
 	Rels() Relations
-}
-
-// Deprecated:
-// The HypermediaDecoder gets the link relations from any HypermediaResource.
-func HypermediaDecoder(res HypermediaResource) Relations {
-	return res.Rels()
-}
-
-// Deprecated:
-// The HyperFieldDecoder gets link relations from a resource by reflecting on
-// its Hyperlink properties.  The relation name is taken either from the name
-// of the field, or a "rel" struct tag.
-//
-//   type Foo struct {
-//     Url         Hyperlink `rel:"self" json:"url"`
-//     CommentsUrl Hyperlink `rel:"comments" json:"comments_url"`
-//   }
-//
-func HyperFieldDecoder(res interface{}) Relations {
-	return HyperFieldRelations(res, nil)
+	FillRels(Relations)
 }

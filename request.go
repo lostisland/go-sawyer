@@ -1,7 +1,7 @@
 package sawyer
 
 import (
-	"github.com/lostisland/go-sawyer/mediaheader"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
@@ -43,10 +43,13 @@ func (r *Request) Do(method string) *Response {
 		return ResponseError(err)
 	}
 
-	headerDecoder := mediaheader.Decoder{}
-	mheader := headerDecoder.Decode(httpres.Header)
-
-	return &Response{nil, mtype, mheader, UseApiError(httpres.StatusCode), false, httpres}
+	return &Response{
+		MediaType:  mtype,
+		BodyClosed: false,
+		Response:   httpres,
+		Rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
+		isApiError: UseApiError(httpres.StatusCode),
+	}
 }
 
 func (r *Request) Head() *Response {
