@@ -3,6 +3,8 @@ package httpcache
 import (
 	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
+	"github.com/lostisland/go-sawyer/mediaheader"
+	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
 )
@@ -18,6 +20,7 @@ type Response struct {
 	ContentLength    int64
 	TransferEncoding []string
 	Trailer          http.Header
+	MediaType        mediatype.MediaType
 }
 
 func Encode(res *sawyer.Response, writer io.Writer) error {
@@ -25,7 +28,7 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 
 	resCopy := Response{res.Status, res.StatusCode, res.Proto, res.ProtoMajor,
 		res.ProtoMinor, res.Header, res.ContentLength, res.TransferEncoding,
-		res.Trailer}
+		res.Trailer, *res.MediaType}
 
 	return enc.Encode(&resCopy)
 }
@@ -38,7 +41,7 @@ func Decode(reader io.Reader) *sawyer.Response {
 		return sawyer.ResponseError(err)
 	}
 
-	httpres := &http.Response{
+	httpres := http.Response{
 		Status:           resCopy.Status,
 		StatusCode:       resCopy.StatusCode,
 		Proto:            resCopy.Proto,
@@ -50,5 +53,11 @@ func Decode(reader io.Reader) *sawyer.Response {
 		Trailer:          resCopy.Trailer,
 	}
 
-	return sawyer.BuildResponse(httpres)
+	var headerDecoder mediaheader.Decoder
+	return &sawyer.Response{
+		MediaType:   &resCopy.MediaType,
+		MediaHeader: headerDecoder.Decode(httpres.Header),
+		BodyClosed:  false,
+		Response:    &httpres,
+	}
 }
