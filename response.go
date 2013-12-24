@@ -55,7 +55,7 @@ func (r *Response) Decode(resource interface{}) error {
 	}
 
 	if r.ResponseError == nil {
-		r.fillRells(resource)
+		r.fillRels(resource)
 	}
 
 	return r.ResponseError
@@ -67,7 +67,7 @@ func (r *Response) decode(output interface{}) {
 	}
 }
 
-func (r *Response) fillRells(v interface{}) {
+func (r *Response) fillRels(v interface{}) {
 	if v == nil {
 		return
 	}
