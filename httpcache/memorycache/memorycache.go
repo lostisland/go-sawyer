@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/httpcache"
-	"io"
 )
 
 type cacheEntry struct {
@@ -26,41 +25,14 @@ func (c *MemoryCache) Get(url string, v interface{}) *sawyer.Response {
 		return nil
 	}
 
-	res := httpcache.Decode(entry.Response)
-
-	if v != nil && res.ContentLength > 0 {
-		err := res.MediaType.Decode(v, entry.Body)
-		if err != nil {
-			return sawyer.ResponseError(err)
-		}
-	}
-
-	return res
+	return httpcache.DecodeFrom(v, entry.Response, entry.Body)
 }
 
 func (c *MemoryCache) Set(url string, res *sawyer.Response, v interface{}) error {
-	entry := &cacheEntry{}
-
-	if v != nil && res.ContentLength > 0 {
-		entry.Body = &bytes.Buffer{}
-		reader := io.TeeReader(res.Body, entry.Body)
-		dec, err := res.MediaType.Decoder(reader)
-		if err != nil {
-			return err
-		}
-
-		err = dec.Decode(v)
-		if err != nil {
-			return err
-		}
+	entry := &cacheEntry{&bytes.Buffer{}, &bytes.Buffer{}}
+	err := httpcache.EncodeTo(v, res, entry.Response, entry.Body)
+	if err == nil {
+		c.Cache[url] = entry
 	}
-
-	entry.Response = &bytes.Buffer{}
-	err := httpcache.Encode(res, entry.Response)
-	if err != nil {
-		return err
-	}
-
-	c.Cache[url] = entry
-	return nil
+	return err
 }

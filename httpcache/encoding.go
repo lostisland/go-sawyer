@@ -9,8 +9,48 @@ import (
 	"net/http"
 )
 
+type Adapter interface {
+	Get(string, interface{}) *sawyer.Response
+	Set(string, *sawyer.Response, interface{}) error
+}
+
+func DecodeFrom(v interface{}, resReader io.Reader, bodyReader io.Reader) *sawyer.Response {
+	res := Decode(resReader)
+
+	if v != nil && res.ContentLength > 0 {
+		err := res.MediaType.Decode(v, bodyReader)
+		if err != nil {
+			return sawyer.ResponseError(err)
+		}
+	}
+
+	return res
+}
+
+func EncodeTo(v interface{}, res *sawyer.Response, resWriter io.Writer, bodyWriter io.Writer) error {
+	if v != nil && res.ContentLength > 0 {
+		reader := io.TeeReader(res.Body, bodyWriter)
+		dec, err := res.MediaType.Decoder(reader)
+		if err != nil {
+			return err
+		}
+
+		err = dec.Decode(v)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := Encode(res, resWriter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Response is an http.Response that can be encoded and decoded safely.
-type Response struct {
+type response struct {
 	Status           string // e.g. "200 OK"
 	StatusCode       int    // e.g. 200
 	Proto            string // e.g. "HTTP/1.0"
@@ -26,7 +66,7 @@ type Response struct {
 func Encode(res *sawyer.Response, writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 
-	resCopy := Response{
+	resCopy := response{
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
 		Proto:            res.Proto,
@@ -47,7 +87,7 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 
 func Decode(reader io.Reader) *sawyer.Response {
 	dec := gob.NewDecoder(reader)
-	var resCopy *Response
+	var resCopy *response
 	err := dec.Decode(&resCopy)
 	if err != nil {
 		return sawyer.ResponseError(err)
