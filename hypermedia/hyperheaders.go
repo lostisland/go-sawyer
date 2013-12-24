@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// TODO: need a full link header parser for http://tools.ietf.org/html/rfc5988
 func HyperHeaderRelations(header http.Header, rels Relations) Relations {
 	if rels == nil {
 		rels = make(Relations)
