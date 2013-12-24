@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/jtacoma/uritemplates"
 	"net/url"
-	"reflect"
 )
 
 // Hyperlink is a string url.  If it is a uri template, it can be converted to
@@ -51,50 +50,13 @@ func (h Relations) Rel(name string, m M) (*url.URL, error) {
 	return nil, fmt.Errorf("No %s relation found", name)
 }
 
-// A HypermediaResource has link relations for next actions of a resource.
-type HypermediaResource interface {
-	Rels() Relations
-}
-
+// Deprecated:
 // The HypermediaDecoder gets the link relations from any HypermediaResource.
 func HypermediaDecoder(res HypermediaResource) Relations {
 	return res.Rels()
 }
 
-// HALResource is a resource with hypermedia specified as JSON HAL.
-//
-// http://stateless.co/hal_specification.html
-type HALResource struct {
-	Links Links `json:"_links"`
-	rels  Relations
-}
-
-// Rels gets the link relations from the HALResource's Links field.
-func (r *HALResource) Rels() Relations {
-	if r.rels == nil {
-		r.rels = make(map[string]Hyperlink)
-		for name, link := range r.Links {
-			r.rels[name] = link.Href
-		}
-	}
-	return r.rels
-}
-
-// Links is a collection of Link objects in a HALResource.  Note that the HAL
-// spec allows single link objects or an array of link objects.  Sawyer
-// currently only supports single link objects.
-type Links map[string]Link
-
-// Link represents a single link in a HALResource.
-type Link struct {
-	Href Hyperlink `json:"href"`
-}
-
-// Expand converts a uri template into a url.URL using the given M map.
-func (l *Link) Expand(m M) (*url.URL, error) {
-	return l.Href.Expand(m)
-}
-
+// Deprecated:
 // The HyperFieldDecoder gets link relations from a resource by reflecting on
 // its Hyperlink properties.  The relation name is taken either from the name
 // of the field, or a "rel" struct tag.
@@ -105,29 +67,5 @@ func (l *Link) Expand(m M) (*url.URL, error) {
 //   }
 //
 func HyperFieldDecoder(res interface{}) Relations {
-	rels := make(Relations)
-	t := reflect.TypeOf(res).Elem()
-	v := reflect.ValueOf(res).Elem()
-	fieldlen := t.NumField()
-	for i := 0; i < fieldlen; i++ {
-		fillRelation(rels, t, v, i)
-	}
-	return rels
+	return HyperFieldRelations(res, nil)
 }
-
-func fillRelation(rels map[string]Hyperlink, t reflect.Type, v reflect.Value, index int) {
-	f := t.Field(index)
-
-	if hyperlinkType != f.Type {
-		return
-	}
-
-	hl := v.Field(index).Interface().(Hyperlink)
-	name := f.Name
-	if rel := f.Tag.Get("rel"); len(rel) > 0 {
-		name = rel
-	}
-	rels[name] = hl
-}
-
-var hyperlinkType = reflect.TypeOf(Hyperlink("foo"))
