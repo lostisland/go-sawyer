@@ -8,6 +8,7 @@ import (
 	"net/url"
 )
 
+// Rels returns a new Relations object.
 func Rels() Relations {
 	return Relations{}
 }

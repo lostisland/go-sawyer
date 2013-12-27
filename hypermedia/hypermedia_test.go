@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-func TestCombinedRelations(t *testing.T) {
-}
-
 func TestReflectRelations(t *testing.T) {
 	input := `
 { "Login": "bob"
