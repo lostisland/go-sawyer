@@ -73,7 +73,7 @@ func (r *Response) fillRels(v interface{}) {
 	}
 
 	if r.Rels == nil {
-		r.Rels = hypermedia.Relations{}
+		r.Rels = hypermedia.Rels()
 	}
 
 	hypermedia.HyperFieldRelations(v, r.Rels)
