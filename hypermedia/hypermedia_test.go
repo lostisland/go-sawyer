@@ -20,7 +20,7 @@ func TestReflectRelations(t *testing.T) {
 	user := &ReflectedUser{}
 	decode(t, input, user)
 
-	rels := HyperFieldDecoder(user)
+	rels := HyperFieldRelations(user, nil)
 	assert.Equal(t, 4, len(rels))
 	assert.Equal(t, "/self", string(rels["Url"]))
 	assert.Equal(t, "/foo", string(rels["FooUrl"]))
@@ -46,7 +46,8 @@ func TestHALRelations(t *testing.T) {
 	user := &HypermediaUser{}
 	decode(t, input, user)
 
-	rels := HypermediaDecoder(user)
+	rels := Rels()
+	user.FillRels(rels)
 	assert.Equal(t, 3, len(rels))
 	assert.Equal(t, "/self", string(rels["self"]))
 	assert.Equal(t, "/foo", string(rels["foo"]))
