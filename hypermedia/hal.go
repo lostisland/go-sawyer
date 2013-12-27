@@ -4,11 +4,6 @@ import (
 	"net/url"
 )
 
-// A HypermediaResource has link relations for next actions of a resource.
-type HypermediaResource interface {
-	Rels() Relations
-}
-
 // HALResource is a resource with hypermedia specified as JSON HAL.
 //
 // http://stateless.co/hal_specification.html
@@ -17,15 +12,14 @@ type HALResource struct {
 	rels  Relations
 }
 
-// Rels gets the link relations from the HALResource's Links field.
-func (r *HALResource) Rels() Relations {
-	if r.rels == nil {
-		r.rels = make(map[string]Hyperlink)
-		for name, link := range r.Links {
-			r.rels[name] = link.Href
-		}
+func (r *HALResource) FillRels(rels Relations) {
+	if r.Links == nil {
+		return
 	}
-	return r.rels
+
+	for name, link := range r.Links {
+		rels[name] = link.Href
+	}
 }
 
 // Links is a collection of Link objects in a HALResource.  Note that the HAL

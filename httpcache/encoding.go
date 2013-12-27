@@ -3,7 +3,6 @@ package httpcache
 import (
 	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
-	"github.com/lostisland/go-sawyer/mediaheader"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
@@ -105,11 +104,9 @@ func Decode(reader io.Reader) *sawyer.Response {
 		Trailer:          resCopy.Trailer,
 	}
 
-	var headerDecoder mediaheader.Decoder
 	return &sawyer.Response{
-		MediaType:   &resCopy.MediaType,
-		MediaHeader: headerDecoder.Decode(httpres.Header),
-		BodyClosed:  false,
-		Response:    &httpres,
+		MediaType:  &resCopy.MediaType,
+		BodyClosed: false,
+		Response:   &httpres,
 	}
 }

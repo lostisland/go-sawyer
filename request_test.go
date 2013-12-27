@@ -3,6 +3,7 @@ package sawyer
 import (
 	"encoding/json"
 	"github.com/bmizerany/assert"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +22,19 @@ func TestSuccessfulGet(t *testing.T) {
 		link := `<https://api.github.com/user/repos?page=3&per_page=100>; rel="next", <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"`
 		head.Set("Link", link)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"id": 1, "login": "sawyer"}`))
+		w.Write([]byte(`{
+			"id": 1,
+			"login": "sawyer",
+			"url": "/field/self",
+			"foo_url": "/field/foo",
+			"whatever": "/field/whatevs",
+			"homepage_url": "/not/hypermedia",
+			"_links": {
+				"self": { "href": "/hal/self" },
+				"foo": { "href": "/hal/foo" },
+				"boom": { "href": "/hal/boom" }
+			}
+		}`))
 	})
 
 	client := setup.Client
@@ -34,14 +47,23 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, false, res.IsError())
 	assert.Equal(t, false, res.IsApiError())
 
+	assert.Equal(t, 2, len(res.Rels))
+	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(res.Rels["next"]))
+	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(res.Rels["last"]))
+
 	assert.Equal(t, nil, res.Decode(user))
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
 
-	mheader := res.MediaHeader
-	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(mheader.Relations["next"]))
-	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(mheader.Relations["last"]))
+	assert.Equal(t, 7, len(res.Rels))
+	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(res.Rels["next"]))
+	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(res.Rels["last"]))
+	assert.Equal(t, "/hal/self", string(res.Rels["self"]))
+	assert.Equal(t, "/hal/foo", string(res.Rels["foo"]))
+	assert.Equal(t, "/hal/boom", string(res.Rels["boom"]))
+	assert.Equal(t, "/field/whatevs", string(res.Rels["whatevs"]))
+	assert.Equal(t, "/field/self", string(res.Rels["Url"]))
 }
 
 func TestSuccessfulGetWithoutOutput(t *testing.T) {
@@ -57,7 +79,7 @@ func TestSuccessfulGetWithoutOutput(t *testing.T) {
 	})
 
 	client := setup.Client
-	user := &TestUser{}
+	user := &TestUser{HALResource: &hypermedia.HALResource{}}
 
 	req, err := client.NewRequest("user")
 	assert.Equal(t, nil, err)
@@ -91,7 +113,7 @@ func TestSuccessfulGetWithoutDecoder(t *testing.T) {
 	})
 
 	client := setup.Client
-	user := &TestUser{}
+	user := &TestUser{HALResource: &hypermedia.HALResource{}}
 
 	req, err := client.NewRequest("user")
 	assert.Equal(t, nil, err)
@@ -111,7 +133,7 @@ func TestSuccessfulPost(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, mtype.String(), r.Header.Get("Content-Type"))
 
-		user := &TestUser{}
+		user := &TestUser{HALResource: &hypermedia.HALResource{}}
 		mtype.Decode(user, r.Body)
 		assert.Equal(t, "sawyer", user.Login)
 
@@ -122,7 +144,7 @@ func TestSuccessfulPost(t *testing.T) {
 	})
 
 	client := setup.Client
-	user := &TestUser{}
+	user := &TestUser{HALResource: &hypermedia.HALResource{}}
 
 	req, err := client.NewRequest("users")
 	assert.Equal(t, nil, err)
@@ -152,7 +174,7 @@ func TestErrorResponse(t *testing.T) {
 	})
 
 	client := setup.Client
-	user := &TestUser{}
+	user := &TestUser{HALResource: &hypermedia.HALResource{}}
 	apierr := &TestError{}
 
 	req, err := client.NewRequest("404")
@@ -207,8 +229,13 @@ func TestResolveRequestQuery(t *testing.T) {
 }
 
 type TestUser struct {
-	Id    int    `json:"id"`
-	Login string `json:"login"`
+	Id          int                  `json:"id"`
+	Login       string               `json:"login"`
+	Url         hypermedia.Hyperlink `json:"url"`
+	FooUrl      hypermedia.Hyperlink `json:"foo_url" rel:"foo"`
+	Whatever    hypermedia.Hyperlink `json:"whatever" rel:"whatevs"`
+	HomepageUrl string               `json:"homepage_url"`
+	*hypermedia.HALResource
 }
 
 type TestError struct {

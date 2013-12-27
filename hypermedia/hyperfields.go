@@ -4,6 +4,15 @@ import (
 	"reflect"
 )
 
+// The HyperFieldRelations gets link relations from a resource by reflecting on
+// its Hyperlink properties.  The relation name is taken either from the name
+// of the field, or a "rel" struct tag.
+//
+//   type Foo struct {
+//     Url         Hyperlink `rel:"self" json:"url"`
+//     CommentsUrl Hyperlink `rel:"comments" json:"comments_url"`
+//   }
+//
 func HyperFieldRelations(res interface{}, rels Relations) Relations {
 	if rels == nil {
 		rels = make(Relations)
