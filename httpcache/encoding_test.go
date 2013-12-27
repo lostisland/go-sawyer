@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/bmizerany/assert"
 	"github.com/lostisland/go-sawyer"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,6 +27,7 @@ func TestEncodeAndDecode(t *testing.T) {
 	orig := req.Get()
 	assert.Equal(t, false, orig.IsError())
 	assert.Equal(t, false, orig.IsApiError())
+	orig.Rels["foo"] = hypermedia.Hyperlink("bar")
 
 	var buf bytes.Buffer
 	err = Encode(orig, &buf)
@@ -38,6 +40,7 @@ func TestEncodeAndDecode(t *testing.T) {
 	assert.Equal(t, "", cached.Header.Get("Accept"))
 	assert.Equal(t, "application/json", cached.Header.Get("Content-Type"))
 	assert.Equal(t, "application/json", cached.MediaType.String())
+	assert.Equal(t, "bar", string(cached.Rels["foo"]))
 }
 
 type SetupServer struct {
