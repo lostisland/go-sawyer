@@ -12,15 +12,6 @@ type HALResource struct {
 	rels  Relations
 }
 
-// Rels gets the link relations from the HALResource's Links field.
-func (r *HALResource) Rels() Relations {
-	if r.rels == nil {
-		r.rels = make(map[string]Hyperlink)
-		r.FillRels(r.rels)
-	}
-	return r.rels
-}
-
 func (r *HALResource) FillRels(rels Relations) {
 	if r.Links == nil {
 		return
