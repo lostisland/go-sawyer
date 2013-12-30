@@ -46,22 +46,6 @@ func EncodeTo(v interface{}, res *sawyer.Response, resWriter io.Writer, bodyWrit
 	return nil
 }
 
-// Response is an http.Response that can be encoded and decoded safely.
-type response struct {
-	Expires          time.Time
-	Status           string // e.g. "200 OK"
-	StatusCode       int    // e.g. 200
-	Proto            string // e.g. "HTTP/1.0"
-	ProtoMajor       int    // e.g. 1
-	ProtoMinor       int    // e.g. 0
-	Header           http.Header
-	ContentLength    int64
-	TransferEncoding []string
-	Trailer          http.Header
-	MediaType        mediatype.MediaType
-	Rels             hypermedia.Relations
-}
-
 func Encode(res *sawyer.Response, writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 
@@ -115,6 +99,22 @@ func Decode(reader io.Reader) *sawyer.Response {
 }
 
 var DefaultExpirationDuration = time.Hour
+
+// Response is an http.Response that can be encoded and decoded safely.
+type response struct {
+	Expires          time.Time
+	Status           string // e.g. "200 OK"
+	StatusCode       int    // e.g. 200
+	Proto            string // e.g. "HTTP/1.0"
+	ProtoMajor       int    // e.g. 1
+	ProtoMinor       int    // e.g. 0
+	Header           http.Header
+	ContentLength    int64
+	TransferEncoding []string
+	Trailer          http.Header
+	MediaType        mediatype.MediaType
+	Rels             hypermedia.Relations
+}
 
 func expiration(res *sawyer.Response) time.Time {
 	return time.Now().Add(maxAgeDuration(res.Header.Get("Cache-Control")))
