@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestEncodeAndDecode(t *testing.T) {
@@ -41,6 +42,22 @@ func TestEncodeAndDecode(t *testing.T) {
 	assert.Equal(t, "application/json", cached.Header.Get("Content-Type"))
 	assert.Equal(t, "application/json", cached.MediaType.String())
 	assert.Equal(t, "bar", string(cached.Rels["foo"]))
+}
+
+func TestEmptyHeaderDuration(t *testing.T) {
+	assert.Equal(t, time.Hour, maxAgeDuration(""))
+}
+
+func TestNoMaxAgeDuration(t *testing.T) {
+	assert.Equal(t, time.Hour, maxAgeDuration("public"))
+}
+
+func TestNoMaxAgeValueDuration(t *testing.T) {
+	assert.Equal(t, time.Hour, maxAgeDuration("max-age"))
+}
+
+func TestMaxAgeValueDuration(t *testing.T) {
+	assert.Equal(t, time.Minute, maxAgeDuration("max-age=60"))
 }
 
 type SetupServer struct {

@@ -7,6 +7,8 @@ import (
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type Adapter interface {
@@ -51,6 +53,7 @@ func EncodeTo(v interface{}, res *sawyer.Response, resWriter io.Writer, bodyWrit
 
 // Response is an http.Response that can be encoded and decoded safely.
 type response struct {
+	Expires          time.Time
 	Status           string // e.g. "200 OK"
 	StatusCode       int    // e.g. 200
 	Proto            string // e.g. "HTTP/1.0"
@@ -68,6 +71,7 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 
 	resCopy := response{
+		Expires:          expiration(res),
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
 		Proto:            res.Proto,
@@ -113,4 +117,26 @@ func Decode(reader io.Reader) *sawyer.Response {
 		BodyClosed: false,
 		Response:   &httpres,
 	}
+}
+
+var DefaultExpirationDuration = time.Hour
+
+func expiration(res *sawyer.Response) time.Time {
+	return time.Now().Add(maxAgeDuration(res.Header.Get("Cache-Control")))
+}
+
+func maxAgeDuration(header string) time.Duration {
+	if len(header) > 0 {
+		for _, field := range strings.Fields(header) {
+			pieces := strings.SplitN(field, "=", 2)
+			if len(pieces) != 2 || pieces[0] != "max-age" {
+				continue
+			}
+			if dur, err := time.ParseDuration(pieces[1] + "s"); err == nil {
+				return dur
+			}
+		}
+	}
+
+	return DefaultExpirationDuration
 }
