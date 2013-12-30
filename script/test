@@ -1,6 +1,6 @@
 script/fmt
 
-packages=". ./hypermedia ./mediatype ./httpcache ./httpcache/memorycache"
+packages=". ./hypermedia ./mediatype ./httpcache"
 
 go test -i       $packages
 go test -race -v $packages

@@ -1,4 +1,4 @@
-package memorycache
+package httpcache
 
 import (
 	"github.com/bmizerany/assert"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetMissingCache(t *testing.T) {
-	cache := New()
+	cache := NewMemoryCache()
 	res := cache.Get("abc", nil)
 	if res != nil {
 		t.Fatal("response was found")
@@ -20,7 +20,7 @@ func TestGetMissingCache(t *testing.T) {
 func TestGetCacheWithoutValue(t *testing.T) {
 	orig := &sawyer.Response{Response: &http.Response{StatusCode: 1}}
 
-	cache := New()
+	cache := NewMemoryCache()
 	cache.Set("abc", orig, nil)
 
 	res := cache.Get("abc", nil)
@@ -48,7 +48,7 @@ func TestSetAndGetCache(t *testing.T) {
 		},
 	}
 
-	cache := New()
+	cache := NewMemoryCache()
 	err = cache.Set("abc", orig, testOrig)
 	assert.Equal(t, nil, err)
 

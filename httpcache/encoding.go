@@ -11,11 +11,6 @@ import (
 	"time"
 )
 
-type Adapter interface {
-	Get(string, interface{}) *sawyer.Response
-	Set(string, *sawyer.Response, interface{}) error
-}
-
 func DecodeFrom(v interface{}, resReader io.Reader, bodyReader io.Reader) *sawyer.Response {
 	res := Decode(resReader)
 
