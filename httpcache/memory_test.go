@@ -14,9 +14,7 @@ func TestGetMissingCache(t *testing.T) {
 	req := request()
 	cache := NewMemoryCache()
 	res := cache.Get(req, nil)
-	if res != nil {
-		t.Fatal("response was found")
-	}
+	assert.Equal(t, true, res.IsError(), "response was found")
 }
 
 func TestGetCacheWithoutValue(t *testing.T) {
@@ -27,11 +25,7 @@ func TestGetCacheWithoutValue(t *testing.T) {
 	cache.Set(req, orig, nil)
 
 	res := cache.Get(req, nil)
-	if res == nil {
-		t.Fatal("Response is nil")
-	}
-
-	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, false, res.IsError(), "response was not found")
 	assert.Equal(t, 1, res.StatusCode)
 }
 
