@@ -10,9 +10,10 @@ import (
 type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
-	isApiError    bool
 	BodyClosed    bool
 	Rels          hypermedia.Relations
+	isApiError    bool
+	cacher        Cacher
 	*http.Response
 }
 
@@ -56,6 +57,10 @@ func (r *Response) Decode(resource interface{}) error {
 
 	if r.ResponseError == nil {
 		r.fillRels(resource)
+
+		if !r.AnyError() {
+			r.cacher.Set(r.Request, r, resource)
+		}
 	}
 
 	return r.ResponseError

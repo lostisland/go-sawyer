@@ -19,6 +19,7 @@ type Client struct {
 	Endpoint   *url.URL
 	Header     http.Header
 	Query      url.Values
+	Cacher     Cacher
 }
 
 // New returns a new Client with a given a URL and an optional client.
@@ -31,7 +32,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query(), &NoOpCache{}}
 }
 
 // NewFromString returns a new Client given a string URL and an optional client.
@@ -62,6 +63,19 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
+}
+
+func buildRequest(c *Client, rawurl string) (*http.Request, error) {
+	u, err := c.ResolveReferenceString(rawurl)
+	if err != nil {
+		return nil, err
+	}
+
+	httpreq, err := http.NewRequest(GetMethod, u, nil)
+	for key, _ := range c.Header {
+		httpreq.Header.Set(key, c.Header.Get(key))
+	}
+	return httpreq, err
 }
 
 func mergeQueries(queries ...url.Values) string {

@@ -12,26 +12,39 @@ type Request struct {
 	Client    *http.Client
 	MediaType *mediatype.MediaType
 	Query     url.Values
+	cacher    Cacher
 	*http.Request
 }
 
 func (c *Client) NewRequest(rawurl string) (*Request, error) {
-	u, err := c.ResolveReferenceString(rawurl)
-	if err != nil {
+	httpreq, err := buildRequest(c, rawurl)
+	if httpreq == nil {
 		return nil, err
 	}
 
-	httpreq, err := http.NewRequest(GetMethod, u, nil)
-	for key, _ := range c.Header {
-		httpreq.Header.Set(key, c.Header.Get(key))
-	}
+	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.Cacher, httpreq}, err
+}
 
-	return &Request{c.HttpClient, nil, httpreq.URL.Query(), httpreq}, err
+func (c *Client) Rels(rawurl string) (hypermedia.Relations, error) {
+	httpreq, err := buildRequest(c, rawurl)
+	if err != nil {
+		return hypermedia.Relations{}, err
+	}
+	return c.Cacher.Rels(httpreq), nil
+}
+
+func (r *Request) Rels() hypermedia.Relations {
+	return r.cacher.Rels(r.Request)
 }
 
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
+	cached := r.cacher.Get(r.Request, nil)
+	if !cached.IsError() {
+		return cached
+	}
+
 	httpres, err := r.Client.Do(r.Request)
 	if err != nil {
 		return ResponseError(err)
@@ -48,6 +61,7 @@ func (r *Request) Do(method string) *Response {
 		BodyClosed: false,
 		Response:   httpres,
 		Rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
+		cacher:     r.cacher,
 		isApiError: UseApiError(httpres.StatusCode),
 	}
 }
