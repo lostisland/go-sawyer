@@ -6,12 +6,14 @@ import (
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
 func TestGetMissingCache(t *testing.T) {
+	req := request()
 	cache := NewMemoryCache()
-	res := cache.Get("abc", nil)
+	res := cache.Get(req, nil)
 	if res != nil {
 		t.Fatal("response was found")
 	}
@@ -20,10 +22,11 @@ func TestGetMissingCache(t *testing.T) {
 func TestGetCacheWithoutValue(t *testing.T) {
 	orig := &sawyer.Response{Response: &http.Response{StatusCode: 1}}
 
+	req := request()
 	cache := NewMemoryCache()
-	cache.Set("abc", orig, nil)
+	cache.Set(req, orig, nil)
 
-	res := cache.Get("abc", nil)
+	res := cache.Get(req, nil)
 	if res == nil {
 		t.Fatal("Response is nil")
 	}
@@ -48,12 +51,13 @@ func TestSetAndGetCache(t *testing.T) {
 		},
 	}
 
+	req := request()
 	cache := NewMemoryCache()
-	err = cache.Set("abc", orig, testOrig)
+	err = cache.Set(req, orig, testOrig)
 	assert.Equal(t, nil, err)
 
 	test := &TestResource{}
-	res := cache.Get("abc", test)
+	res := cache.Get(req, test)
 	if res == nil {
 		t.Fatal("Response is nil")
 	}
@@ -61,6 +65,10 @@ func TestSetAndGetCache(t *testing.T) {
 	assert.Equal(t, false, res.IsError())
 	assert.Equal(t, 1, res.StatusCode)
 	assert.Equal(t, 2, test.A)
+}
+
+func request() *http.Request {
+	return &http.Request{URL: &url.URL{Path: "abc"}}
 }
 
 type TestResource struct {

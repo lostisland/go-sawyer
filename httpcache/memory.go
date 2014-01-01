@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/hypermedia"
+	"net/http"
 )
 
 type cacheEntry struct {
@@ -19,8 +20,9 @@ func NewMemoryCache() *MemoryCache {
 	return &MemoryCache{make(map[string]*cacheEntry)}
 }
 
-func (c *MemoryCache) Get(url string, v interface{}) *sawyer.Response {
-	entry := c.Cache[url]
+func (c *MemoryCache) Get(req *http.Request, v interface{}) *sawyer.Response {
+	key := RequestKey(req)
+	entry := c.Cache[key]
 	if entry != nil {
 		return DecodeFrom(v, entry.Response, entry.Body)
 	}
@@ -28,17 +30,19 @@ func (c *MemoryCache) Get(url string, v interface{}) *sawyer.Response {
 	return EmptyResponse()
 }
 
-func (c *MemoryCache) Set(url string, res *sawyer.Response, v interface{}) error {
+func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response, v interface{}) error {
+	key := RequestKey(req)
 	entry := &cacheEntry{&bytes.Buffer{}, &bytes.Buffer{}}
 	err := EncodeTo(v, res, entry.Response, entry.Body)
 	if err == nil {
-		c.Cache[url] = entry
+		c.Cache[key] = entry
 	}
 	return err
 }
 
-func (c *MemoryCache) Rels(url string) hypermedia.Relations {
-	entry := c.Cache[url]
+func (c *MemoryCache) Rels(req *http.Request) hypermedia.Relations {
+	key := RequestKey(req)
+	entry := c.Cache[key]
 	if entry != nil {
 		return Decode(entry.Response).Rels
 	}
