@@ -16,6 +16,9 @@ type Request struct {
 	*http.Request
 }
 
+// NewRequest creates a new sawyer.Request for the given relative url path, with
+// any default headers or query parameters specified on Client.  The Request URL
+// is resolved to an absolute URL.
 func (c *Client) NewRequest(rawurl string) (*Request, error) {
 	httpreq, err := buildRequest(c, rawurl)
 	if httpreq == nil {
@@ -25,6 +28,8 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.Cacher, httpreq}, err
 }
 
+// Rels attempts to look up the hypermedia relations for a given relative url.
+// An empty hypermedia Relations map is returned if there is no cache.
 func (c *Client) Rels(rawurl string) (hypermedia.Relations, error) {
 	httpreq, err := buildRequest(c, rawurl)
 	if err != nil {
@@ -33,6 +38,7 @@ func (c *Client) Rels(rawurl string) (hypermedia.Relations, error) {
 	return c.Cacher.Rels(httpreq), nil
 }
 
+// Rels attempts to look up the hypermedia relations for this Request.
 func (r *Request) Rels() hypermedia.Relations {
 	return r.cacher.Rels(r.Request)
 }
@@ -94,6 +100,7 @@ func (r *Request) Options() *Response {
 	return r.Do(OptionsMethod)
 }
 
+// Encodes and sets the proper headers for the request body.
 func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
 	r.MediaType = mtype
 	buf, err := mtype.Encode(input)
