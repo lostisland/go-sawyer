@@ -47,26 +47,33 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) 
 		return err
 	}
 
-	keyFile, err := os.OpenFile(filepath.Join(path, keyFilename), fileCreateFlag, 0666)
+	keyFile, err := newTempFile(path, keyFilename)
 	if err != nil {
 		return err
 	}
 	defer keyFile.Close()
 	keyFile.Write([]byte(RequestKey(req)))
 
-	responseFile, err := os.OpenFile(filepath.Join(path, responseFilename), fileCreateFlag, 0666)
+	responseFile, err := newTempFile(path, responseFilename)
 	if err != nil {
 		return err
 	}
 	defer responseFile.Close()
 
-	bodyFile, err := os.OpenFile(filepath.Join(path, bodyFilename), fileCreateFlag, 0666)
+	bodyFile, err := newTempFile(path, bodyFilename)
 	if err != nil {
 		return err
 	}
 	defer bodyFile.Close()
 
-	return EncodeTo(v, res, responseFile, bodyFile)
+	err = EncodeTo(v, res, responseFile, bodyFile)
+	if err == nil {
+		keyFile.Keep = true
+		responseFile.Keep = true
+		bodyFile.Keep = true
+	}
+
+	return err
 }
 
 func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
@@ -84,4 +91,34 @@ func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
 func (c *FileCache) requestPath(r *http.Request) string {
 	sha := RequestSha(r)
 	return filepath.Join(c.path, sha[0:2], sha[2:4], sha)
+}
+
+type tempFile struct {
+	Name     string
+	Temp     string
+	Keep     bool
+	tempFile *os.File
+	file     *os.File
+}
+
+func newTempFile(dir string, name string) (*tempFile, error) {
+	full := filepath.Join(dir, name)
+	temp := filepath.Join(dir, "tmp_"+name)
+	file, err := os.OpenFile(temp, fileCreateFlag, 0666)
+	return &tempFile{full, temp, false, file, nil}, err
+}
+
+func (f *tempFile) Close() error {
+	err := f.tempFile.Close()
+
+	if f.Keep && err == nil {
+		err = os.Rename(f.Temp, f.Name)
+	}
+
+	os.Remove(f.Temp)
+	return err
+}
+
+func (f *tempFile) Write(data []byte) (int, error) {
+	return f.tempFile.Write(data)
 }
