@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
+	"io"
 	"net/http"
 )
 
@@ -48,28 +49,31 @@ func (r *Response) Decode(resource interface{}) error {
 	defer r.Body.Close()
 	r.BodyClosed = true
 
-	dec, err := r.MediaType.Decoder(r.Body)
-	if err != nil {
-		r.ResponseError = err
+	if !r.AnyError() {
+		r.ResponseError = r.cacher.Set(r.Request, r, resource)
 	} else {
-		r.ResponseError = dec.Decode(resource)
-	}
-
-	if r.ResponseError == nil {
-		r.fillRels(resource)
-
-		if !r.AnyError() {
-			r.cacher.Set(r.Request, r, resource)
-		}
+		r.ResponseError = r.DecodeFrom(resource, r.Body)
 	}
 
 	return r.ResponseError
 }
 
-func (r *Response) decode(output interface{}) {
-	if !r.isApiError {
-		r.Decode(output)
+func (r *Response) DecodeFrom(resource interface{}, body io.Reader) error {
+	if resource == nil || r.ContentLength < 1 {
+		return nil
 	}
+
+	dec, err := r.MediaType.Decoder(body)
+	if err != nil {
+		return err
+	}
+
+	if err := dec.Decode(resource); err != nil {
+		return err
+	}
+
+	r.fillRels(resource)
+	return nil
 }
 
 func (r *Response) fillRels(v interface{}) {

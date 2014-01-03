@@ -20,7 +20,7 @@ func (c *NoOpCache) Get(req *http.Request, v interface{}) *Response {
 }
 
 func (c *NoOpCache) Set(req *http.Request, res *Response, v interface{}) error {
-	return nil
+	return res.DecodeFrom(v, res.Body)
 }
 
 func (c *NoOpCache) Rels(req *http.Request) hypermedia.Relations {

@@ -25,25 +25,12 @@ func DecodeFrom(v interface{}, resReader io.Reader, bodyReader io.Reader) *sawye
 }
 
 func EncodeTo(v interface{}, res *sawyer.Response, resWriter io.Writer, bodyWriter io.Writer) error {
-	if v != nil && res.ContentLength > 0 {
-		reader := io.TeeReader(res.Body, bodyWriter)
-		dec, err := res.MediaType.Decoder(reader)
-		if err != nil {
-			return err
-		}
-
-		err = dec.Decode(v)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := Encode(res, resWriter)
-	if err != nil {
+	reader := io.TeeReader(res.Body, bodyWriter)
+	if err := res.DecodeFrom(v, reader); err != nil {
 		return err
 	}
 
-	return nil
+	return Encode(res, resWriter)
 }
 
 func Encode(res *sawyer.Response, writer io.Writer) error {
