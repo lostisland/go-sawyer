@@ -11,6 +11,7 @@ import (
 const (
 	responseFilename = "response"
 	bodyFilename     = "body"
+	fileCreateFlag   = os.O_RDWR | os.O_CREATE | os.O_EXCL
 )
 
 type FileCache struct {
@@ -45,13 +46,13 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) 
 		return err
 	}
 
-	responseFile, err := os.Create(filepath.Join(path, responseFilename))
+	responseFile, err := os.OpenFile(filepath.Join(path, responseFilename), fileCreateFlag, 0666)
 	if err != nil {
 		return err
 	}
 	defer responseFile.Close()
 
-	bodyFile, err := os.Create(filepath.Join(path, bodyFilename))
+	bodyFile, err := os.OpenFile(filepath.Join(path, bodyFilename), fileCreateFlag, 0666)
 	if err != nil {
 		return err
 	}
