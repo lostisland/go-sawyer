@@ -82,5 +82,6 @@ func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
 }
 
 func (c *FileCache) requestPath(r *http.Request) string {
-	return filepath.Join(c.path, RequestSha(r))
+	sha := RequestSha(r)
+	return filepath.Join(c.path, sha[0:2], sha[2:4], sha)
 }
