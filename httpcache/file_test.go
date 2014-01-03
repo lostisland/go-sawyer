@@ -7,33 +7,29 @@ import (
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestMemoryGetMissingCache(t *testing.T) {
-	req := httpcachetest.Request("abc")
-	cache := NewMemoryCache()
-	res := cache.Get(req, nil)
-	assert.Equal(t, true, res.IsError(), "response was found")
-}
-
-func TestMemoryGetCacheWithoutValue(t *testing.T) {
-	orig := &sawyer.Response{Response: &http.Response{StatusCode: 1}}
+func TestFileGetMissingCache(t *testing.T) {
+	setup := FileSetup(t)
+	defer setup.Teardown()
 
 	req := httpcachetest.Request("abc")
-	cache := NewMemoryCache()
-	cache.Set(req, orig, nil)
-
+	cache := setup.Cache
 	res := cache.Get(req, nil)
-	assert.Equal(t, false, res.IsError(), "response was not found")
-	assert.Equal(t, 1, res.StatusCode)
+	assert.Equal(t, true, res.IsError())
 }
 
-func TestMemorySetAndGetCache(t *testing.T) {
+func TestFileSetAndGetCache(t *testing.T) {
+	setup := FileSetup(t)
+	defer setup.Teardown()
+
 	mt, err := mediatype.Parse("application/json")
 	assert.Equal(t, nil, err)
 
-	testOrig := &TestResource{2}
+	testOrig := &FileTestResource{2}
 	body, err := mt.Encode(testOrig)
 
 	orig := &sawyer.Response{
@@ -46,7 +42,7 @@ func TestMemorySetAndGetCache(t *testing.T) {
 	}
 
 	req := httpcachetest.Request("abc")
-	cache := NewMemoryCache()
+	cache := setup.Cache
 	err = cache.Set(req, orig, testOrig)
 	assert.Equal(t, nil, err)
 
@@ -61,6 +57,33 @@ func TestMemorySetAndGetCache(t *testing.T) {
 	assert.Equal(t, 2, test.A)
 }
 
-type TestResource struct {
+type fileSetup struct {
+	Path  string
+	Cache *FileCache
+	*testing.T
+}
+
+func FileSetup(t *testing.T) *fileSetup {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(wd, "filecachetest")
+	err = os.MkdirAll(path, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &fileSetup{path, NewFileCache(path), t}
+}
+
+func (s *fileSetup) Teardown() {
+	if err := os.RemoveAll(s.Path); err != nil {
+		s.Fatal(err)
+	}
+}
+
+type FileTestResource struct {
 	A int
 }

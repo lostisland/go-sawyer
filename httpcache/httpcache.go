@@ -4,6 +4,8 @@
 package httpcache
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/hypermedia"
@@ -30,12 +32,22 @@ type Adapter interface {
 	Rels(*http.Request) hypermedia.Relations
 }
 
+func ResponseError(err error) *sawyer.Response {
+	return sawyer.ResponseError(err)
+}
+
 func EmptyResponse() *sawyer.Response {
-	return sawyer.ResponseError(NoResponseError)
+	return ResponseError(NoResponseError)
 }
 
 func RequestKey(r *http.Request) string {
 	return r.Header.Get(keyHeader) + keySep + r.URL.String()
+}
+
+func RequestSha(r *http.Request) string {
+	key := RequestKey(r)
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[0:32])
 }
 
 const (
