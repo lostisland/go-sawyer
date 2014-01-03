@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	keyFilename      = "key"
 	responseFilename = "response"
 	bodyFilename     = "body"
 	fileCreateFlag   = os.O_RDWR | os.O_CREATE | os.O_EXCL
@@ -45,6 +46,13 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) 
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
 	}
+
+	keyFile, err := os.OpenFile(filepath.Join(path, keyFilename), fileCreateFlag, 0666)
+	if err != nil {
+		return err
+	}
+	defer keyFile.Close()
+	keyFile.Write([]byte(RequestKey(req)))
 
 	responseFile, err := os.OpenFile(filepath.Join(path, responseFilename), fileCreateFlag, 0666)
 	if err != nil {
