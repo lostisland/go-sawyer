@@ -12,7 +12,7 @@ type Response struct {
 	MediaType     *mediatype.MediaType
 	isApiError    bool
 	BodyClosed    bool
-	Rels          hypermedia.Relations
+	rels          hypermedia.Relations
 	*http.Response
 }
 
@@ -35,6 +35,12 @@ func (r *Response) Error() string {
 	return ""
 }
 
+func (r *Response) HypermediaRels(rels hypermedia.Relations) {
+	for key, value := range r.rels {
+		rels[key] = value
+	}
+}
+
 func (r *Response) Decode(resource interface{}) error {
 	if r.MediaType == nil {
 		return errors.New("No media type for this response")
@@ -54,32 +60,12 @@ func (r *Response) Decode(resource interface{}) error {
 		r.ResponseError = dec.Decode(resource)
 	}
 
-	if r.ResponseError == nil {
-		r.fillRels(resource)
-	}
-
 	return r.ResponseError
 }
 
 func (r *Response) decode(output interface{}) {
 	if !r.isApiError {
 		r.Decode(output)
-	}
-}
-
-func (r *Response) fillRels(v interface{}) {
-	if v == nil {
-		return
-	}
-
-	if r.Rels == nil {
-		r.Rels = hypermedia.NewRels()
-	}
-
-	hypermedia.HyperFieldRelations(v, r.Rels)
-
-	if hal, ok := v.(hypermedia.HypermediaResource); ok {
-		hal.HypermediaRels(r.Rels)
 	}
 }
 

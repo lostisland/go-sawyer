@@ -16,12 +16,12 @@ func NewRels() Relations {
 func Rels(resource interface{}) Relations {
 	rels := NewRels()
 
-	if hypermediaRel, ok := resource.(HypermediaResource); ok {
-		hypermediaRel.HypermediaRels(rels)
-	}
-
 	if hypermediaRel, ok := resource.(HyperfieldResource); ok {
 		HyperFieldRelations(hypermediaRel, rels)
+	}
+
+	if hypermediaRel, ok := resource.(HypermediaResource); ok {
+		hypermediaRel.HypermediaRels(rels)
 	}
 
 	return rels
