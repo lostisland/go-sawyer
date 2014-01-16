@@ -9,7 +9,7 @@ import (
 )
 
 // Rels returns a new Relations object.
-func Rels() Relations {
+func NewRels() Relations {
 	return Relations{}
 }
 
