@@ -2,5 +2,5 @@ script/fmt
 
 packages=". ./hypermedia ./mediatype"
 
-go test -i       $packages
+go test -race -i $packages
 go test -race -v $packages
