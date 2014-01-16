@@ -12,7 +12,7 @@ type HALResource struct {
 	rels  Relations
 }
 
-func (r *HALResource) FillRels(rels Relations) {
+func (r *HALResource) HypermediaRels(rels Relations) {
 	if r.Links == nil {
 		return
 	}

@@ -46,8 +46,7 @@ func TestHALRelations(t *testing.T) {
 	user := &HypermediaUser{}
 	decode(t, input, user)
 
-	rels := NewRels()
-	user.FillRels(rels)
+	rels := Rels(user)
 	assert.Equal(t, 3, len(rels))
 	assert.Equal(t, "/self", string(rels["self"]))
 	assert.Equal(t, "/foo", string(rels["foo"]))
