@@ -8,9 +8,20 @@ import (
 	"net/url"
 )
 
+// Relations is a map of keys that point to Hyperlink objects.
+type Relations map[string]Hyperlink
+
 // Rels returns a new Relations object.
 func NewRels() Relations {
 	return Relations{}
+}
+
+// Rel fetches and expands the Hyperlink by its given key in the Relations map.
+func (h Relations) Rel(name string, m M) (*url.URL, error) {
+	if rel, ok := h[name]; ok {
+		return rel.Expand(m)
+	}
+	return nil, fmt.Errorf("No %s relation found", name)
 }
 
 func Rels(resource interface{}) Relations {
@@ -59,17 +70,6 @@ func (l Hyperlink) Expand(m M) (*url.URL, error) {
 
 // M represents a map of values to expand a Hyperlink.
 type M map[string]interface{}
-
-// Relations is a map of keys that point to Hyperlink objects.
-type Relations map[string]Hyperlink
-
-// Rel fetches and expands the Hyperlink by its given key in the Relations map.
-func (h Relations) Rel(name string, m M) (*url.URL, error) {
-	if rel, ok := h[name]; ok {
-		return rel.Expand(m)
-	}
-	return nil, fmt.Errorf("No %s relation found", name)
-}
 
 // A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
