@@ -46,8 +46,8 @@ func RequestKey(r *http.Request) string {
 
 func RequestSha(r *http.Request) string {
 	key := RequestKey(r)
-	sum := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(sum[0:32])
+	sum := sha256.New().Sum([]byte(key))
+	return hex.EncodeToString(sum)
 }
 
 const (
