@@ -20,10 +20,10 @@ type Adapter interface {
 	// Get retrieves a Response for a REST resource by its URL.  The URL should be
 	// the full canonical URL for the resource.  The response will be nil if it is
 	// expired.
-	Get(*http.Request, interface{}) *sawyer.Response
+	Get(*http.Request) *sawyer.Response
 
 	// Set caches a Response for a resource by its URL.
-	Set(*http.Request, *sawyer.Response, interface{}) error
+	Set(*http.Request, *sawyer.Response) error
 }
 
 func ResponseError(err error) *sawyer.Response {

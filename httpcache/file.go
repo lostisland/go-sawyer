@@ -22,7 +22,7 @@ func NewFileCache(path string) *FileCache {
 	return &FileCache{path}
 }
 
-func (c *FileCache) Get(req *http.Request, v interface{}) *sawyer.Response {
+func (c *FileCache) Get(req *http.Request) *sawyer.Response {
 	path := c.requestPath(req)
 
 	responseFile, err := os.Open(filepath.Join(path, responseFilename))
@@ -31,16 +31,21 @@ func (c *FileCache) Get(req *http.Request, v interface{}) *sawyer.Response {
 	}
 	defer responseFile.Close()
 
+	res := Decode(responseFile)
+	res.Request = req
+
 	bodyFile, err := os.Open(filepath.Join(path, bodyFilename))
 	if err != nil {
-		return ResponseError(err)
+		res.ResponseError = err
+		res.BodyClosed = true
+		return res
 	}
-	defer bodyFile.Close()
 
-	return DecodeFrom(v, responseFile, bodyFile)
+	res.Body = bodyFile
+	return res
 }
 
-func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) error {
+func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
 	path := c.requestPath(req)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
@@ -59,13 +64,17 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) 
 	}
 	defer responseFile.Close()
 
+	if err = Encode(res, responseFile); err != nil {
+		return err
+	}
+
 	bodyFile, err := newTempFile(path, bodyFilename)
 	if err != nil {
 		return err
 	}
 	defer bodyFile.Close()
 
-	err = EncodeTo(v, res, responseFile, bodyFile)
+	err = EncodeBody(res, bodyFile)
 	if err == nil {
 		keyFile.Keep = true
 		responseFile.Keep = true

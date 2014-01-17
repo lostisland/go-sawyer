@@ -18,7 +18,7 @@ func TestFileGetMissingCache(t *testing.T) {
 
 	req := httpcachetest.Request("abc")
 	cache := setup.Cache
-	res := cache.Get(req, nil)
+	res := cache.Get(req)
 	assert.Equal(t, true, res.IsError())
 }
 
@@ -43,17 +43,20 @@ func TestFileSetAndGetCache(t *testing.T) {
 
 	req := httpcachetest.Request("abc")
 	cache := setup.Cache
-	err = cache.Set(req, orig, testOrig)
+	err = cache.Set(req, orig)
 	assert.Equal(t, nil, err)
 
-	test := &TestResource{}
-	res := cache.Get(req, test)
+	res := cache.Get(req)
 	if res == nil {
 		t.Fatal("Response is nil")
 	}
 
-	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, false, res.IsError(), res.Error())
 	assert.Equal(t, 1, res.StatusCode)
+
+	test := &TestResource{}
+	err = res.Decode(test)
+	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, test.A)
 }
 

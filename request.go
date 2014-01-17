@@ -28,25 +28,10 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.Cacher, httpreq}, err
 }
 
-// Rels attempts to look up the hypermedia relations for a given relative url.
-// An empty hypermedia Relations map is returned if there is no cache.
-func (c *Client) Rels(rawurl string) (hypermedia.Relations, error) {
-	httpreq, err := buildRequest(c, rawurl)
-	if err != nil {
-		return hypermedia.Relations{}, err
-	}
-	return c.Cacher.Rels(httpreq), nil
-}
-
-// Rels attempts to look up the hypermedia relations for this Request.
-func (r *Request) Rels() hypermedia.Relations {
-	return r.cacher.Rels(r.Request)
-}
-
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
-	cached := r.cacher.Get(r.Request, nil)
+	cached := r.cacher.Get(r.Request)
 	if !cached.IsError() {
 		return cached
 	}
@@ -62,14 +47,19 @@ func (r *Request) Do(method string) *Response {
 		return ResponseError(err)
 	}
 
-	return &Response{
+	res := &Response{
 		MediaType:  mtype,
 		BodyClosed: false,
 		Response:   httpres,
-		cacher:     r.cacher,
 		rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
 		isApiError: UseApiError(httpres.StatusCode),
 	}
+
+	if !res.AnyError() {
+		r.cacher.Set(r.Request, res)
+	}
+
+	return res
 }
 
 func (r *Request) Head() *Response {

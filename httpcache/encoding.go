@@ -1,35 +1,30 @@
 package httpcache
 
 import (
+	"bytes"
 	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func DecodeFrom(v interface{}, resReader io.Reader, bodyReader io.Reader) *sawyer.Response {
-	res := Decode(resReader)
-
-	if v != nil && res.ContentLength > 0 {
-		err := res.MediaType.Decode(v, bodyReader)
-		if err != nil {
-			return sawyer.ResponseError(err)
-		}
+func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
+	if res.ContentLength == 0 {
+		return nil
 	}
 
-	return res
-}
-
-func EncodeTo(v interface{}, res *sawyer.Response, resWriter io.Writer, bodyWriter io.Writer) error {
-	reader := io.TeeReader(res.Body, bodyWriter)
-	if err := res.DecodeFrom(v, reader); err != nil {
-		return err
+	buf := &bytes.Buffer{}
+	writer := io.MultiWriter(bodyWriter, buf)
+	_, err := io.Copy(writer, res.Body)
+	if err == nil {
+		res.Body = ioutil.NopCloser(buf)
 	}
 
-	return Encode(res, resWriter)
+	return err
 }
 
 func Encode(res *sawyer.Response, writer io.Writer) error {
@@ -57,29 +52,28 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 
 func Decode(reader io.Reader) *sawyer.Response {
 	dec := gob.NewDecoder(reader)
-	var resCopy *response
+	resCopy := &response{}
 	err := dec.Decode(&resCopy)
+	httpres := &http.Response{}
+	res := &sawyer.Response{BodyClosed: false, Response: httpres}
+
 	if err != nil {
-		return sawyer.ResponseError(err)
+		res.ResponseError = err
+		res.BodyClosed = true
+		return res
 	}
 
-	httpres := http.Response{
-		Status:           resCopy.Status,
-		StatusCode:       resCopy.StatusCode,
-		Proto:            resCopy.Proto,
-		ProtoMajor:       resCopy.ProtoMajor,
-		ProtoMinor:       resCopy.ProtoMinor,
-		Header:           resCopy.Header,
-		ContentLength:    resCopy.ContentLength,
-		TransferEncoding: resCopy.TransferEncoding,
-		Trailer:          resCopy.Trailer,
-	}
-
-	return &sawyer.Response{
-		MediaType:  &resCopy.MediaType,
-		BodyClosed: false,
-		Response:   &httpres,
-	}
+	httpres.Status = resCopy.Status
+	httpres.StatusCode = resCopy.StatusCode
+	httpres.Proto = resCopy.Proto
+	httpres.ProtoMajor = resCopy.ProtoMajor
+	httpres.ProtoMinor = resCopy.ProtoMinor
+	httpres.Header = resCopy.Header
+	httpres.ContentLength = resCopy.ContentLength
+	httpres.TransferEncoding = resCopy.TransferEncoding
+	httpres.Trailer = resCopy.Trailer
+	res.MediaType = &resCopy.MediaType
+	return res
 }
 
 var DefaultExpirationDuration = time.Hour
