@@ -15,7 +15,11 @@ func NewRels() Relations {
 
 func Rels(resource interface{}) Relations {
 	rels := NewRels()
+	FillRels(resource, rels)
+	return rels
+}
 
+func FillRels(resource interface{}, rels Relations) {
 	if hypermediaRel, ok := resource.(HyperfieldResource); ok {
 		HyperFieldRelations(hypermediaRel, rels)
 	}
@@ -23,8 +27,6 @@ func Rels(resource interface{}) Relations {
 	if hypermediaRel, ok := resource.(HypermediaResource); ok {
 		hypermediaRel.HypermediaRels(rels)
 	}
-
-	return rels
 }
 
 // Hyperlink is a string url.  If it is a uri template, it can be converted to
