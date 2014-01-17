@@ -3,7 +3,6 @@ package httpcache
 import (
 	"bytes"
 	"github.com/lostisland/go-sawyer"
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 )
 
@@ -38,14 +37,4 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response, v interface{}
 		c.Cache[key] = entry
 	}
 	return err
-}
-
-func (c *MemoryCache) Rels(req *http.Request) hypermedia.Relations {
-	key := RequestKey(req)
-	entry := c.Cache[key]
-	if entry != nil {
-		return Decode(entry.Response).Rels
-	}
-
-	return hypermedia.Relations{}
 }

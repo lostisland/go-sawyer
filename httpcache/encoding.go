@@ -3,7 +3,6 @@ package httpcache
 import (
 	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io"
 	"net/http"
@@ -47,7 +46,6 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 		ContentLength:    res.ContentLength,
 		TransferEncoding: res.TransferEncoding,
 		Trailer:          res.Trailer,
-		Rels:             res.Rels,
 	}
 
 	if res.MediaType != nil {
@@ -79,7 +77,6 @@ func Decode(reader io.Reader) *sawyer.Response {
 
 	return &sawyer.Response{
 		MediaType:  &resCopy.MediaType,
-		Rels:       resCopy.Rels,
 		BodyClosed: false,
 		Response:   &httpres,
 	}
@@ -100,7 +97,6 @@ type response struct {
 	TransferEncoding []string
 	Trailer          http.Header
 	MediaType        mediatype.MediaType
-	Rels             hypermedia.Relations
 }
 
 func expiration(res *sawyer.Response) time.Time {

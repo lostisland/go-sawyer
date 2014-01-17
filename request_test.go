@@ -47,23 +47,23 @@ func TestSuccessfulGet(t *testing.T) {
 	assert.Equal(t, false, res.IsError())
 	assert.Equal(t, false, res.IsApiError())
 
-	assert.Equal(t, 2, len(res.Rels))
-	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(res.Rels["next"]))
-	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(res.Rels["last"]))
+	rels := hypermedia.Rels(res)
+	assert.Equal(t, 2, len(rels))
+	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(rels["next"]))
+	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(rels["last"]))
 
 	assert.Equal(t, nil, res.Decode(user))
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, 1, user.Id)
 	assert.Equal(t, "sawyer", user.Login)
 
-	assert.Equal(t, 7, len(res.Rels))
-	assert.Equal(t, "https://api.github.com/user/repos?page=3&per_page=100", string(res.Rels["next"]))
-	assert.Equal(t, "https://api.github.com/user/repos?page=50&per_page=100", string(res.Rels["last"]))
-	assert.Equal(t, "/hal/self", string(res.Rels["self"]))
-	assert.Equal(t, "/hal/foo", string(res.Rels["foo"]))
-	assert.Equal(t, "/hal/boom", string(res.Rels["boom"]))
-	assert.Equal(t, "/field/whatevs", string(res.Rels["whatevs"]))
-	assert.Equal(t, "/field/self", string(res.Rels["Url"]))
+	userRels := hypermedia.Rels(user)
+	assert.Equal(t, 5, len(userRels))
+	assert.Equal(t, "/hal/self", string(userRels["self"]))
+	assert.Equal(t, "/hal/foo", string(userRels["foo"]))
+	assert.Equal(t, "/hal/boom", string(userRels["boom"]))
+	assert.Equal(t, "/field/whatevs", string(userRels["whatevs"]))
+	assert.Equal(t, "/field/self", string(userRels["Url"]))
 }
 
 func TestSuccessfulGetWithoutOutput(t *testing.T) {
@@ -237,6 +237,8 @@ type TestUser struct {
 	HomepageUrl string               `json:"homepage_url"`
 	*hypermedia.HALResource
 }
+
+func (u *TestUser) HyperfieldRels() {}
 
 type TestError struct {
 	Message string `json:"message"`

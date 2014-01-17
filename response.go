@@ -12,9 +12,9 @@ type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
 	BodyClosed    bool
-	Rels          hypermedia.Relations
 	isApiError    bool
 	cacher        Cacher
+	rels          hypermedia.Relations
 	*http.Response
 }
 
@@ -35,6 +35,12 @@ func (r *Response) Error() string {
 		return r.ResponseError.Error()
 	}
 	return ""
+}
+
+func (r *Response) HypermediaRels(rels hypermedia.Relations) {
+	for key, value := range r.rels {
+		rels[key] = value
+	}
 }
 
 func (r *Response) Decode(resource interface{}) error {
@@ -72,24 +78,7 @@ func (r *Response) DecodeFrom(resource interface{}, body io.Reader) error {
 		return err
 	}
 
-	r.fillRels(resource)
 	return nil
-}
-
-func (r *Response) fillRels(v interface{}) {
-	if v == nil {
-		return
-	}
-
-	if r.Rels == nil {
-		r.Rels = hypermedia.Rels()
-	}
-
-	hypermedia.HyperFieldRelations(v, r.Rels)
-
-	if hal, ok := v.(hypermedia.HypermediaResource); ok {
-		hal.FillRels(r.Rels)
-	}
 }
 
 func ResponseError(err error) *Response {

@@ -2,7 +2,6 @@ package httpcache
 
 import (
 	"github.com/lostisland/go-sawyer"
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -74,18 +73,6 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response, v interface{}) 
 	}
 
 	return err
-}
-
-func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
-	path := c.requestPath(req)
-
-	responseFile, err := os.Open(filepath.Join(path, responseFilename))
-	if err != nil {
-		return hypermedia.Relations{}
-	}
-	defer responseFile.Close()
-
-	return Decode(responseFile).Rels
 }
 
 func (c *FileCache) requestPath(r *http.Request) string {
