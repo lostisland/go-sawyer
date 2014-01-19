@@ -47,7 +47,7 @@ func (r *Request) Do(method string) *Response {
 		MediaType:  mtype,
 		BodyClosed: false,
 		Response:   httpres,
-		Rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
+		rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
 		isApiError: UseApiError(httpres.StatusCode),
 	}
 }

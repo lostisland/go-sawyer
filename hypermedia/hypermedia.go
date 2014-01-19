@@ -9,8 +9,22 @@ import (
 )
 
 // Rels returns a new Relations object.
-func Rels() Relations {
+func NewRels() Relations {
 	return Relations{}
+}
+
+func Rels(resource interface{}) Relations {
+	rels := NewRels()
+
+	if hypermediaRel, ok := resource.(HyperfieldResource); ok {
+		HyperFieldRelations(hypermediaRel, rels)
+	}
+
+	if hypermediaRel, ok := resource.(HypermediaResource); ok {
+		hypermediaRel.HypermediaRels(rels)
+	}
+
+	return rels
 }
 
 // Hyperlink is a string url.  If it is a uri template, it can be converted to
@@ -57,5 +71,5 @@ func (h Relations) Rel(name string, m M) (*url.URL, error) {
 
 // A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
-	FillRels(Relations)
+	HypermediaRels(Relations)
 }
