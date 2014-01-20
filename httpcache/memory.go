@@ -24,21 +24,23 @@ func NewMemoryCache() *MemoryCache {
 	return &MemoryCache{make(map[string]*cacheEntry)}
 }
 
-func (c *MemoryCache) Get(req *http.Request) *sawyer.Response {
+func (c *MemoryCache) Get(req *http.Request) (sawyer.CachedResponse, error) {
 	key := RequestKey(req)
 	entry, ok := c.Cache[key]
 	if !ok {
-		return EmptyResponse()
+		return nil, NoResponseError
 	}
 
-	res := Decode(entry.Response)
-	res.Cacher = c
-	res.Request = req
-	res.Body = ioutil.NopCloser(bytes.NewBuffer(entry.Body))
+	cachedResponse, err := Decode(entry.Response)
+	if err == nil {
+		cachedResponse.Cacher = c
+		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
+			res.Body = ioutil.NopCloser(bytes.NewBuffer(entry.Body))
+			res.BodyClosed = false
+		}
+	}
 
-	entry.Response.Seek(0, 0)
-
-	return res
+	return cachedResponse, err
 }
 
 func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {

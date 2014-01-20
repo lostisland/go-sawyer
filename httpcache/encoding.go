@@ -30,7 +30,7 @@ func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
 func Encode(res *sawyer.Response, writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 
-	resCopy := response{
+	resCopy := CachedResponse{
 		Expires:          expiration(res),
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
@@ -50,36 +50,20 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 	return enc.Encode(&resCopy)
 }
 
-func Decode(reader io.Reader) *sawyer.Response {
+func Decode(reader io.Reader) (*CachedResponseDecoder, error) {
 	dec := gob.NewDecoder(reader)
-	resCopy := &response{}
-	err := dec.Decode(&resCopy)
-	httpres := &http.Response{}
-	res := &sawyer.Response{BodyClosed: false, Response: httpres}
-
-	if err != nil {
-		res.ResponseError = err
-		res.BodyClosed = true
-		return res
+	res := &CachedResponse{}
+	if err := dec.Decode(&res); err != nil {
+		return nil, err
 	}
 
-	httpres.Status = resCopy.Status
-	httpres.StatusCode = resCopy.StatusCode
-	httpres.Proto = resCopy.Proto
-	httpres.ProtoMajor = resCopy.ProtoMajor
-	httpres.ProtoMinor = resCopy.ProtoMinor
-	httpres.Header = resCopy.Header
-	httpres.ContentLength = resCopy.ContentLength
-	httpres.TransferEncoding = resCopy.TransferEncoding
-	httpres.Trailer = resCopy.Trailer
-	res.MediaType = &resCopy.MediaType
-	return res
+	return &CachedResponseDecoder{CachedResponse: res}, nil
 }
 
 var DefaultExpirationDuration = time.Hour
 
-// response is an http.Response that can be encoded and decoded safely.
-type response struct {
+// CachedResponse is an http.Response that can be encoded and decoded safely.
+type CachedResponse struct {
 	Expires          time.Time
 	Status           string // e.g. "200 OK"
 	StatusCode       int    // e.g. 200
@@ -91,6 +75,45 @@ type response struct {
 	TransferEncoding []string
 	Trailer          http.Header
 	MediaType        mediatype.MediaType
+}
+
+// CachedResponseDecoder can decode the embedded CachedResponse into a sawyer
+// response.
+type CachedResponseDecoder struct {
+	Cacher      sawyer.Cacher
+	SetBodyFunc func(res *sawyer.Response)
+	*CachedResponse
+}
+
+func (r *CachedResponseDecoder) Decode(req *sawyer.Request) *sawyer.Response {
+	cached := r.CachedResponse
+	res := &sawyer.Response{
+		BodyClosed: false,
+		MediaType:  &cached.MediaType,
+		Response: &http.Response{
+			Status:           cached.Status,
+			StatusCode:       cached.StatusCode,
+			Proto:            cached.Proto,
+			ProtoMajor:       cached.ProtoMajor,
+			ProtoMinor:       cached.ProtoMinor,
+			Header:           cached.Header,
+			ContentLength:    cached.ContentLength,
+			TransferEncoding: cached.TransferEncoding,
+			Trailer:          cached.Trailer,
+			Request:          req.Request,
+		},
+	}
+
+	res.Cacher = r.Cacher
+	if res.Cacher == nil {
+		res.Cacher = req.Cacher
+	}
+
+	if r.SetBodyFunc != nil {
+		r.SetBodyFunc(res)
+	}
+
+	return res
 }
 
 func expiration(res *sawyer.Response) time.Time {

@@ -32,9 +32,10 @@ func TestEncodeAndDecode(t *testing.T) {
 	err = Encode(orig, &buf)
 	assert.Equal(t, nil, err)
 
-	cached := Decode(&buf)
+	cachedResponse, err := Decode(&buf)
+	assert.Equal(t, nil, err)
 
-	assert.Equal(t, false, cached.IsError())
+	cached := cachedResponse.Decode(req)
 	assert.Equal(t, 200, cached.StatusCode)
 	assert.Equal(t, "", cached.Header.Get("Accept"))
 	assert.Equal(t, "application/json", cached.Header.Get("Content-Type"))

@@ -24,7 +24,8 @@ func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	// cache is empty
 	rels, ok := cli.Cacher.Rels(req.Request)
 	assert.Equal(t, false, ok)
-	assert.Equal(t, true, cli.Cacher.Get(req.Request).IsError())
+	cachedResponse, err := cli.Cacher.Get(req.Request)
+	assert.NotEqual(t, nil, err)
 
 	// make first request
 	res := req.Get()
@@ -32,8 +33,10 @@ func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
 
 	// response is cached
-	res2 := cli.Cacher.Get(req.Request)
-	assert.Equal(t, false, res2.IsError())
+	cachedResponse, err = cli.Cacher.Get(req.Request)
+	assert.Equal(t, nil, err)
+
+	res2 := cachedResponse.Decode(req)
 	assert.Equal(t, res.StatusCode, res2.StatusCode)
 	assert.Equal(t, res.Header.Get("Content-Type"), res2.Header.Get("Content-Type"))
 
@@ -76,7 +79,8 @@ func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	req2, err := cli.NewRequest("/")
 	assert.Equal(t, nil, err)
 	req2.Header.Set("Accept", "application/vnd.sawyer.v2+json")
-	assert.Equal(t, true, cli.Cacher.Get(req2.Request).IsError())
+	_, err = cli.Cacher.Get(req2.Request)
+	assert.NotEqual(t, nil, err)
 
 	rels, ok = cli.Cacher.Rels(req2.Request)
 	assert.Equal(t, false, ok)

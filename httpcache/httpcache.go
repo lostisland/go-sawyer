@@ -26,10 +26,6 @@ func ResponseError(err error) *sawyer.Response {
 	return sawyer.ResponseError(err)
 }
 
-func EmptyResponse() *sawyer.Response {
-	return ResponseError(NoResponseError)
-}
-
 var NoResponseError = errors.New("No Response")
 
 const (

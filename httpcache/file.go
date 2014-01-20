@@ -26,28 +26,31 @@ func NewFileCache(path string) *FileCache {
 	return &FileCache{path}
 }
 
-func (c *FileCache) Get(req *http.Request) *sawyer.Response {
+func (c *FileCache) Get(req *http.Request) (sawyer.CachedResponse, error) {
 	path := c.requestPath(req)
 
 	responseFile, err := os.Open(filepath.Join(path, responseFilename))
 	if err != nil {
-		return ResponseError(err)
+		return nil, err
 	}
 	defer responseFile.Close()
 
-	res := Decode(responseFile)
-	res.Cacher = c
-	res.Request = req
-
-	bodyFile, err := os.Open(filepath.Join(path, bodyFilename))
-	if err != nil {
-		res.ResponseError = err
-		res.BodyClosed = true
-		return res
+	cachedResponse, err := Decode(responseFile)
+	if err == nil {
+		cachedResponse.Cacher = c
+		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
+			bodyFile, err := os.Open(filepath.Join(path, bodyFilename))
+			if err == nil {
+				res.Body = bodyFile
+				res.BodyClosed = false
+			} else {
+				res.ResponseError = err
+				res.BodyClosed = true
+			}
+		}
 	}
 
-	res.Body = bodyFile
-	return res
+	return cachedResponse, err
 }
 
 func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {

@@ -9,16 +9,20 @@ import (
 // A Cacher has the ability to get and set caches for HTTP requests and resource
 // relations.  See the sawyer/httpcache package.
 type Cacher interface {
-	Get(*http.Request) *Response
+	Get(*http.Request) (CachedResponse, error)
 	Set(*http.Request, *Response) error
 	SetRels(*http.Request, hypermedia.Relations) error
 	Rels(*http.Request) (hypermedia.Relations, bool)
 }
 
+type CachedResponse interface {
+	Decode(*Request) *Response
+}
+
 type noOpCache struct{}
 
-func (c *noOpCache) Get(req *http.Request) *Response {
-	return noOpResponse
+func (c *noOpCache) Get(req *http.Request) (CachedResponse, error) {
+	return nil, noOpError
 }
 
 func (c *noOpCache) Set(req *http.Request, res *Response) error {
@@ -34,8 +38,8 @@ func (c *noOpCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 }
 
 var (
-	noOpResponse = ResponseError(errors.New("No Response"))
-	noOpCacher   Cacher
+	noOpError  = errors.New("No Response")
+	noOpCacher Cacher
 )
 
 func init() {
