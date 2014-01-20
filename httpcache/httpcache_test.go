@@ -48,9 +48,11 @@ func TestCacheResponses(t *testing.T) {
 	assert.Equal(t, res.Header.Get("Content-Type"), res2.Header.Get("Content-Type"))
 
 	value2 := &HttpCacheTestValue{}
+	assert.Equal(t, 0, len(value2.Rels()))
 	assert.Equal(t, nil, res2.Decode(value2))
 	assert.Equal(t, "Resource", value2.Name)
 	assert.Equal(t, "Link", string(value2.Url))
+	assert.Equal(t, 2, len(value2.Rels()))
 	assert.Equal(t, 2, len(hypermedia.Rels(value2)))
 
 	req2, err := cli.NewRequest("/")
@@ -69,8 +71,20 @@ func server(handler http.HandlerFunc) (*httptest.Server, *sawyer.Client) {
 }
 
 type HttpCacheTestValue struct {
-	Name string
-	Url  hypermedia.Hyperlink
+	Name       string
+	Url        hypermedia.Hyperlink
+	cachedRels hypermedia.Relations
+}
+
+func (r *HttpCacheTestValue) Rels() hypermedia.Relations {
+	if r.cachedRels == nil {
+		r.cachedRels = make(hypermedia.Relations)
+	}
+	return r.cachedRels
+}
+
+func (r *HttpCacheTestValue) CacheRels(rels hypermedia.Relations) {
+	r.cachedRels = rels
 }
 
 func (r *HttpCacheTestValue) HypermediaRels(rels hypermedia.Relations) {

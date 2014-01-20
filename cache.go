@@ -6,6 +6,11 @@ import (
 	"net/http"
 )
 
+type CachedResource interface {
+	Rels() hypermedia.Relations
+	CacheRels(hypermedia.Relations)
+}
+
 type Cacher interface {
 	Get(*http.Request) *Response
 	Set(*http.Request, *Response) error

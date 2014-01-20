@@ -57,7 +57,12 @@ func (r *Response) Decode(resource interface{}) error {
 
 	r.ResponseError = r.DecodeFrom(resource, r.Body)
 	if r.ResponseError == nil {
-		r.Cacher.SetRels(r.Request, hypermedia.Rels(resource))
+		rels := hypermedia.Rels(resource)
+		if err := r.Cacher.SetRels(r.Request, rels); err == nil {
+			if cachedResponse, ok := resource.(CachedResource); ok {
+				cachedResponse.CacheRels(rels)
+			}
+		}
 	}
 
 	return r.ResponseError
