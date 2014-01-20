@@ -17,6 +17,7 @@ const (
 	fileCreateFlag   = os.O_RDWR | os.O_CREATE | os.O_EXCL
 )
 
+// FileCache is a sawyer.Cacher that stores entries on disk.
 type FileCache struct {
 	path string
 }

@@ -15,6 +15,7 @@ type cacheEntry struct {
 	Relations hypermedia.Relations
 }
 
+// MemoryCache is a sawyer.Cacher that stores the entries in memory.
 type MemoryCache struct {
 	Cache map[string]*cacheEntry
 }

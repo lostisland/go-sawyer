@@ -78,7 +78,7 @@ func Decode(reader io.Reader) *sawyer.Response {
 
 var DefaultExpirationDuration = time.Hour
 
-// Response is an http.Response that can be encoded and decoded safely.
+// response is an http.Response that can be encoded and decoded safely.
 type response struct {
 	Expires          time.Time
 	Status           string // e.g. "200 OK"

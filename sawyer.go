@@ -65,6 +65,7 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 	return c.ResolveReference(u).String(), nil
 }
 
+// buildRequest assembles a net/http Request using the given relative url path.
 func buildRequest(c *Client, rawurl string) (*http.Request, error) {
 	u, err := c.ResolveReferenceString(rawurl)
 	if err != nil {
@@ -78,6 +79,8 @@ func buildRequest(c *Client, rawurl string) (*http.Request, error) {
 	return httpreq, err
 }
 
+// mergeQueries merges the given url.Values into a single encoded URI query
+// string.
 func mergeQueries(queries ...url.Values) string {
 	merged := make(url.Values)
 	for _, q := range queries {

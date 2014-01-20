@@ -24,12 +24,27 @@ func (h Relations) Rel(name string, m M) (*url.URL, error) {
 	return nil, fmt.Errorf("No %s relation found", name)
 }
 
+// Rels gets the hypermedia relations from the given resource.
 func Rels(resource interface{}) Relations {
+	cachedResource, ok := resource.(CachedResource)
+	if ok {
+		if rels, cached := cachedResource.Rels(); cached {
+			return rels
+		}
+	}
+
 	rels := NewRels()
 	FillRels(resource, rels)
+
+	if ok {
+		cachedResource.CacheRels(rels)
+	}
+
 	return rels
 }
 
+// FillRels populates the given relations object from the relations in the
+// resource.
 func FillRels(resource interface{}, rels Relations) {
 	if hypermediaRel, ok := resource.(HyperfieldResource); ok {
 		HyperFieldRelations(hypermediaRel, rels)
@@ -74,4 +89,11 @@ type M map[string]interface{}
 // A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
 	HypermediaRels(Relations)
+}
+
+// A CachedResource is capable of caching the relations locally, so that
+// multiple accesses don't require parsing it again.
+type CachedResource interface {
+	Rels() (Relations, bool)
+	CacheRels(Relations)
 }

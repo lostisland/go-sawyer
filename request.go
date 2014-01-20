@@ -1,13 +1,16 @@
 package sawyer
 
 import (
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 )
 
+// Request is a wrapped net/http Request with a pointer to the net/http Client,
+// MediaType, parsed URI query, and the configured Cacher.  Requests are capable
+// of returning a sawyer Response with Do() or the HTTP verb helpers (Get(),
+// Head(), Post(), etc).
 type Request struct {
 	Client    *http.Client
 	MediaType *mediatype.MediaType
@@ -28,6 +31,9 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 	return &Request{c.HttpClient, nil, httpreq.URL.Query(), c.Cacher, httpreq}, err
 }
 
+// Do completes the HTTP request, returning a response.  The Request's Cacher is
+// used to return a cached response if available.  Otherwise, the request goes
+// through and fills the cache for future requests.
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
@@ -52,7 +58,6 @@ func (r *Request) Do(method string) *Response {
 		BodyClosed: false,
 		Response:   httpres,
 		Cacher:     r.Cacher,
-		rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
 		isApiError: UseApiError(httpres.StatusCode),
 	}
 
@@ -63,43 +68,58 @@ func (r *Request) Do(method string) *Response {
 	return res
 }
 
+// Head is a helper method for Do().
 func (r *Request) Head() *Response {
 	return r.Do(HeadMethod)
 }
 
+// Get is a helper method for Do().
 func (r *Request) Get() *Response {
 	return r.Do(GetMethod)
 }
 
+// Post is a helper method for Do().
 func (r *Request) Post() *Response {
 	return r.Do(PostMethod)
 }
 
+// Put is a helper method for Do().
 func (r *Request) Put() *Response {
 	return r.Do(PutMethod)
 }
 
+// Patch is a helper method for Do().
 func (r *Request) Patch() *Response {
 	return r.Do(PatchMethod)
 }
 
+// Delete is a helper method for Do().
 func (r *Request) Delete() *Response {
 	return r.Do(DeleteMethod)
 }
 
+// Options is a helper method for Do().
 func (r *Request) Options() *Response {
 	return r.Do(OptionsMethod)
 }
 
-// Encodes and sets the proper headers for the request body.
-func (r *Request) SetBody(mtype *mediatype.MediaType, input interface{}) error {
+// SetBody encodes and sets the proper headers for the request body from the
+// given resource.  The resource is encoded in-memory, so be careful about
+// passing a massive object.  You can set the ContentLength and Body properties
+// manually.
+func (r *Request) SetBody(mtype *mediatype.MediaType, resource interface{}) error {
 	r.MediaType = mtype
-	buf, err := mtype.Encode(input)
+	r.Header.Set(ctypeHeader, mtype.String())
+
+	if resource == nil {
+		return nil
+	}
+
+	buf, err := mtype.Encode(resource)
 	if err != nil {
 		return err
 	}
 
-	r.Header.Set(ctypeHeader, mtype.String())
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(buf)
 	return nil

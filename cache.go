@@ -6,11 +6,8 @@ import (
 	"net/http"
 )
 
-type CachedResource interface {
-	Rels() (hypermedia.Relations, bool)
-	CacheRels(hypermedia.Relations)
-}
-
+// A Cacher has the ability to get and set caches for HTTP requests and resource
+// relations.  See the sawyer/httpcache package.
 type Cacher interface {
 	Get(*http.Request) *Response
 	Set(*http.Request, *Response) error
@@ -18,21 +15,21 @@ type Cacher interface {
 	Rels(*http.Request) (hypermedia.Relations, bool)
 }
 
-type NoOpCache struct{}
+type noOpCache struct{}
 
-func (c *NoOpCache) Get(req *http.Request) *Response {
+func (c *noOpCache) Get(req *http.Request) *Response {
 	return noOpResponse
 }
 
-func (c *NoOpCache) Set(req *http.Request, res *Response) error {
+func (c *noOpCache) Set(req *http.Request, res *Response) error {
 	return nil
 }
 
-func (c *NoOpCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
+func (c *noOpCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
 	return nil
 }
 
-func (c *NoOpCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
+func (c *noOpCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 	return nil, false
 }
 
@@ -42,5 +39,5 @@ var (
 )
 
 func init() {
-	noOpCacher = &NoOpCache{}
+	noOpCacher = &noOpCache{}
 }

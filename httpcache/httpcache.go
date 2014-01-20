@@ -11,16 +11,7 @@ import (
 	"net/http"
 )
 
-var NoResponseError = errors.New("No Response")
-
-func ResponseError(err error) *sawyer.Response {
-	return sawyer.ResponseError(err)
-}
-
-func EmptyResponse() *sawyer.Response {
-	return ResponseError(NoResponseError)
-}
-
+// RequestKey builds a unique string key for a net/http Request.
 func RequestKey(r *http.Request) string {
 	return r.Header.Get(keyHeader) + keySep + r.URL.String()
 }
@@ -30,6 +21,16 @@ func RequestSha(r *http.Request) string {
 	sum := sha256.New().Sum([]byte(key))
 	return hex.EncodeToString(sum)
 }
+
+func ResponseError(err error) *sawyer.Response {
+	return sawyer.ResponseError(err)
+}
+
+func EmptyResponse() *sawyer.Response {
+	return ResponseError(NoResponseError)
+}
+
+var NoResponseError = errors.New("No Response")
 
 const (
 	keySep    = ":"
