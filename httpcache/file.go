@@ -92,6 +92,39 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
 	return err
 }
 
+func (c *FileCache) UpdateCache(req *http.Request, res *http.Response) error {
+	path := c.requestPath(req)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
+
+	fullFile := filepath.Join(path, responseFilename)
+
+	responseFile, err := os.Open(fullFile)
+	if err != nil {
+		return err
+	}
+
+	cached, err := Decode(responseFile)
+	responseFile.Close()
+	if err != nil {
+		return err
+	}
+
+	cached.Expires = expiration(res)
+
+	responseFile, err = os.Create(fullFile)
+	if err != nil {
+		return err
+	}
+
+	if err = EncodeResponse(cached.CachedResponse, responseFile); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
 	path := c.requestPath(req)
 	if err := os.MkdirAll(path, 0755); err != nil {

@@ -12,26 +12,9 @@ import (
 	"time"
 )
 
-func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
-	if res.ContentLength == 0 {
-		return nil
-	}
-
-	buf := &bytes.Buffer{}
-	writer := io.MultiWriter(bodyWriter, buf)
-	_, err := io.Copy(writer, res.Body)
-	if err == nil {
-		res.Body = ioutil.NopCloser(buf)
-	}
-
-	return err
-}
-
 func Encode(res *sawyer.Response, writer io.Writer) error {
-	enc := gob.NewEncoder(writer)
-
 	resCopy := CachedResponse{
-		Expires:          expiration(res),
+		Expires:          expiration(res.Response),
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
 		Proto:            res.Proto,
@@ -47,7 +30,26 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 		resCopy.MediaType = *res.MediaType
 	}
 
-	return enc.Encode(&resCopy)
+	return EncodeResponse(&resCopy, writer)
+}
+
+func EncodeResponse(cached *CachedResponse, writer io.Writer) error {
+	return gob.NewEncoder(writer).Encode(cached)
+}
+
+func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
+	if res.ContentLength == 0 {
+		return nil
+	}
+
+	buf := &bytes.Buffer{}
+	writer := io.MultiWriter(bodyWriter, buf)
+	_, err := io.Copy(writer, res.Body)
+	if err == nil {
+		res.Body = ioutil.NopCloser(buf)
+	}
+
+	return err
 }
 
 func Decode(reader io.Reader) (*CachedResponseDecoder, error) {
@@ -116,7 +118,25 @@ func (r *CachedResponseDecoder) Decode(req *sawyer.Request) *sawyer.Response {
 	return res
 }
 
-func expiration(res *sawyer.Response) time.Time {
+func (r *CachedResponseDecoder) IsExpired() bool {
+	return time.Now().After(r.Expires)
+}
+
+func (r *CachedResponseDecoder) IsFresh() bool {
+	return !r.IsExpired()
+}
+
+func (r *CachedResponseDecoder) SetupRequest(req *http.Request) {
+	if etag := r.Header.Get(etagHeader); len(etag) > 0 {
+		req.Header.Set(ifNoneMatchHeader, etag)
+	}
+
+	if lastmod := r.Header.Get(lastModHeader); len(lastmod) > 0 {
+		req.Header.Set(ifModSinceHeader, lastmod)
+	}
+}
+
+func expiration(res *http.Response) time.Time {
 	return time.Now().Add(maxAgeDuration(res.Header.Get("Cache-Control")))
 }
 
@@ -135,3 +155,10 @@ func maxAgeDuration(header string) time.Duration {
 
 	return DefaultExpirationDuration
 }
+
+const (
+	etagHeader        = "ETag"
+	lastModHeader     = "Last-Modified"
+	ifNoneMatchHeader = "If-None-Match"
+	ifModSinceHeader  = "If-Modified-Since"
+)

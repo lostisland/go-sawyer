@@ -11,12 +11,16 @@ import (
 type Cacher interface {
 	Get(*http.Request) (CachedResponse, error)
 	Set(*http.Request, *Response) error
+	UpdateCache(*http.Request, *http.Response) error
 	SetRels(*http.Request, hypermedia.Relations) error
 	Rels(*http.Request) (hypermedia.Relations, bool)
 }
 
 type CachedResponse interface {
 	Decode(*Request) *Response
+	SetupRequest(*http.Request)
+	IsFresh() bool
+	IsExpired() bool
 }
 
 type noOpCache struct{}
@@ -26,6 +30,10 @@ func (c *noOpCache) Get(req *http.Request) (CachedResponse, error) {
 }
 
 func (c *noOpCache) Set(req *http.Request, res *Response) error {
+	return nil
+}
+
+func (c *noOpCache) UpdateCache(req *http.Request, res *http.Response) error {
 	return nil
 }
 

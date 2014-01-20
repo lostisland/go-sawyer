@@ -15,6 +15,21 @@ type cacheEntry struct {
 	Relations hypermedia.Relations
 }
 
+func (e *cacheEntry) Decode(cacher sawyer.Cacher) (*CachedResponseDecoder, error) {
+	cachedResponse, err := Decode(e.Response)
+	e.Response.Seek(0, 0)
+
+	if err == nil {
+		cachedResponse.Cacher = cacher
+		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
+			res.Body = ioutil.NopCloser(bytes.NewBuffer(e.Body))
+			res.BodyClosed = false
+		}
+	}
+
+	return cachedResponse, err
+}
+
 // MemoryCache is a sawyer.Cacher that stores the entries in memory.
 type MemoryCache struct {
 	Cache map[string]*cacheEntry
@@ -25,22 +40,11 @@ func NewMemoryCache() *MemoryCache {
 }
 
 func (c *MemoryCache) Get(req *http.Request) (sawyer.CachedResponse, error) {
-	key := RequestKey(req)
-	entry, ok := c.Cache[key]
-	if !ok {
-		return nil, NoResponseError
+	if _, entry, ok := c.getEntry(req); ok {
+		return entry.Decode(c)
 	}
 
-	cachedResponse, err := Decode(entry.Response)
-	if err == nil {
-		cachedResponse.Cacher = c
-		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
-			res.Body = ioutil.NopCloser(bytes.NewBuffer(entry.Body))
-			res.BodyClosed = false
-		}
-	}
-
-	return cachedResponse, err
+	return nil, NoResponseError
 }
 
 func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
@@ -65,6 +69,26 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
 	return nil
 }
 
+func (c *MemoryCache) UpdateCache(req *http.Request, res *http.Response) error {
+	key, entry, ok := c.getEntry(req)
+	if !ok {
+		return NoResponseError
+	}
+
+	cached, err := entry.Decode(c)
+	if err != nil {
+		return err
+	}
+
+	cached.Expires = expiration(res)
+
+	buf := &bytes.Buffer{}
+	EncodeResponse(cached.CachedResponse, buf)
+	entry.Response = bytes.NewReader(buf.Bytes())
+	c.Cache[key] = entry
+	return nil
+}
+
 func (c *MemoryCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
 	key := RequestKey(req)
 	entry, ok := c.Cache[key]
@@ -83,4 +107,10 @@ func (c *MemoryCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 	}
 
 	return nil, false
+}
+
+func (c *MemoryCache) getEntry(req *http.Request) (string, *cacheEntry, bool) {
+	key := RequestKey(req)
+	entry, ok := c.Cache[key]
+	return key, entry, ok
 }

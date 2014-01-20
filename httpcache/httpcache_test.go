@@ -10,12 +10,16 @@ import (
 )
 
 func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
-	srv, cli := server(func(w http.ResponseWriter, r *http.Request) {
+	GetSetCacheTestFor(cacher, t)
+	ETagExpirationTestFor(cacher, t)
+}
+
+func GetSetCacheTestFor(cacher sawyer.Cacher, t *testing.T) {
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
 		w.Write([]byte(`{"Name":"Resource","Url":"Link"}`))
 	})
-	cli.Cacher = cacher
 	defer srv.Close()
 
 	req, err := cli.NewRequest("/")
@@ -86,9 +90,70 @@ func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	assert.Equal(t, false, ok)
 }
 
-func server(handler http.HandlerFunc) (*httptest.Server, *sawyer.Client) {
+func ETagExpirationTestFor(cacher sawyer.Cacher, t *testing.T) {
+	assertExpirationTestFor("ETag", "If-None-Match", `"boom"`, cacher, t)
+}
+
+func LastModExpirationTestFor(cacher sawyer.Cacher, t *testing.T) {
+	assertExpirationTestFor("Last-Modified", "If-Modified-Since", `"boom"`, cacher, t)
+}
+
+func assertExpirationTestFor(reqHeader, resHeader, headerValue string, cacher sawyer.Cacher, t *testing.T) {
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
+		head := w.Header()
+		head.Set("Content-Type", "application/json")
+		head.Set(reqHeader, headerValue)
+
+		if r.Header.Get(resHeader) != headerValue {
+			head.Set("Cache-Control", "max-age=-300")
+			w.WriteHeader(200)
+			w.Write([]byte(`{"Name":"Resource","Url":"Link"}`))
+			return
+		}
+
+		w.WriteHeader(304)
+		w.Write([]byte(`{"Name":"Changed","Url":"Link"}`))
+	})
+	defer srv.Close()
+
+	req, err := cli.NewRequest("/")
+	assert.Equal(t, nil, err)
+
+	// make initial request
+	res := req.Get()
+	assert.Equal(t, false, res.IsError())
+	assert.Equal(t, 200, res.StatusCode)
+
+	// decode value from initial response
+	value := &HttpCacheTestValue{}
+	assert.Equal(t, nil, res.Decode(value))
+	assert.Equal(t, "Resource", value.Name)
+
+	// cached request is not fresh because max-age=-60
+	cached, err := cli.Cacher.Get(req.Request)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, false, cached.IsFresh())
+
+	// make second request
+	res2 := req.Get()
+	assert.Equal(t, false, res2.IsError())
+	assert.Equal(t, 200, res2.StatusCode)
+
+	// decode value from second response
+	value2 := &HttpCacheTestValue{}
+	assert.Equal(t, nil, res2.Decode(value2))
+	assert.Equal(t, "Resource", value2.Name)
+
+	// after 304, Expiration should be updated
+	cached, err = cli.Cacher.Get(req.Request)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, cached.IsFresh())
+}
+
+func server(cacher sawyer.Cacher, handler http.HandlerFunc) (*httptest.Server, *sawyer.Client) {
 	srv := httptest.NewServer(handler)
 	cli, _ := sawyer.NewFromString(srv.URL, nil)
+	cli.Cacher = cacher
 	cli.Header.Set("Accept", "application.vnd.sawyer+json")
 	return srv, cli
 }

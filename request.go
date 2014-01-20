@@ -37,14 +37,23 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
-	cached, err := r.Cacher.Get(r.Request)
-	if err == nil {
-		return cached.Decode(r)
+	cached, cachedErr := r.Cacher.Get(r.Request)
+	if cachedErr == nil {
+		if cached.IsFresh() {
+			return cached.Decode(r)
+		} else {
+			cached.SetupRequest(r.Request)
+		}
 	}
 
 	httpres, err := r.Client.Do(r.Request)
 	if err != nil {
 		return ResponseError(err)
+	}
+
+	if cachedErr == nil && httpres.StatusCode == 304 {
+		r.Cacher.UpdateCache(r.Request, httpres)
+		return cached.Decode(r)
 	}
 
 	mtype, err := mediaType(httpres)
