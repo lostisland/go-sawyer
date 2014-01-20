@@ -8,28 +8,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/lostisland/go-sawyer"
-	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 )
 
-var (
-	DefaultAdapter  Adapter
-	NoResponseError = errors.New("No Response")
-)
-
-type Adapter interface {
-	// Get retrieves a Response for a REST resource by its URL.  The URL should be
-	// the full canonical URL for the resource.  The response will be nil if it is
-	// expired.
-	Get(*http.Request) *sawyer.Response
-
-	// Set caches a Response for a resource by its URL.
-	Set(*http.Request, *sawyer.Response) error
-
-	SetRels(*http.Request, hypermedia.Relations) error
-
-	Rels(*http.Request) hypermedia.Relations
-}
+var NoResponseError = errors.New("No Response")
 
 func ResponseError(err error) *sawyer.Response {
 	return sawyer.ResponseError(err)

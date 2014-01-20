@@ -6,7 +6,6 @@ import (
 	"net/http"
 )
 
-// See httpcache.Adapter
 type Cacher interface {
 	Get(*http.Request) *Response
 	Set(*http.Request, *Response) error
