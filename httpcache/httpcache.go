@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"github.com/lostisland/go-sawyer"
 	"net/http"
 )
 
@@ -20,10 +19,6 @@ func RequestSha(r *http.Request) string {
 	key := RequestKey(r)
 	sum := sha256.New().Sum([]byte(key))
 	return hex.EncodeToString(sum)
-}
-
-func ResponseError(err error) *sawyer.Response {
-	return sawyer.ResponseError(err)
 }
 
 var NoResponseError = errors.New("No Response")
