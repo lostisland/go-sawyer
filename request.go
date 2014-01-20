@@ -12,7 +12,7 @@ type Request struct {
 	Client    *http.Client
 	MediaType *mediatype.MediaType
 	Query     url.Values
-	cacher    Cacher
+	Cacher    Cacher
 	*http.Request
 }
 
@@ -31,7 +31,7 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
-	cached := r.cacher.Get(r.Request)
+	cached := r.Cacher.Get(r.Request)
 	if !cached.IsError() {
 		return cached
 	}
@@ -51,12 +51,13 @@ func (r *Request) Do(method string) *Response {
 		MediaType:  mtype,
 		BodyClosed: false,
 		Response:   httpres,
+		Cacher:     r.Cacher,
 		rels:       hypermedia.HyperHeaderRelations(httpres.Header, nil),
 		isApiError: UseApiError(httpres.StatusCode),
 	}
 
 	if !res.AnyError() {
-		r.cacher.Set(r.Request, res)
+		r.Cacher.Set(r.Request, res)
 	}
 
 	return res

@@ -31,6 +31,7 @@ func (c *MemoryCache) Get(req *http.Request) *sawyer.Response {
 	}
 
 	res := Decode(entry.Response)
+	res.Cacher = c
 	res.Request = req
 	res.Body = ioutil.NopCloser(bytes.NewBuffer(entry.Body))
 

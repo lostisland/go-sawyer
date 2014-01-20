@@ -37,7 +37,7 @@ func TestCacheResponses(t *testing.T) {
 	assert.Equal(t, "Resource", value.Name)
 	assert.Equal(t, "Link", string(value.Url))
 	assert.Equal(t, 2, len(hypermedia.Rels(value)))
-	//assert.Equal(t, 2, len(cli.Cacher.Rels(req.Request)))
+	assert.Equal(t, 2, len(cli.Cacher.Rels(req.Request)))
 
 	// response is cached
 	res2 := cli.Cacher.Get(req.Request)

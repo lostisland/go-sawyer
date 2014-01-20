@@ -35,6 +35,7 @@ func (c *FileCache) Get(req *http.Request) *sawyer.Response {
 	defer responseFile.Close()
 
 	res := Decode(responseFile)
+	res.Cacher = c
 	res.Request = req
 
 	bodyFile, err := os.Open(filepath.Join(path, bodyFilename))

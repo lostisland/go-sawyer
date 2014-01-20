@@ -12,6 +12,7 @@ type Response struct {
 	ResponseError error
 	MediaType     *mediatype.MediaType
 	BodyClosed    bool
+	Cacher        Cacher
 	isApiError    bool
 	rels          hypermedia.Relations
 	*http.Response
@@ -55,6 +56,9 @@ func (r *Response) Decode(resource interface{}) error {
 	r.BodyClosed = true
 
 	r.ResponseError = r.DecodeFrom(resource, r.Body)
+	if r.ResponseError == nil {
+		r.Cacher.SetRels(r.Request, hypermedia.Rels(resource))
+	}
 
 	return r.ResponseError
 }
