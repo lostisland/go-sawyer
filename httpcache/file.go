@@ -1,7 +1,9 @@
 package httpcache
 
 import (
+	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,6 +13,7 @@ const (
 	keyFilename      = "key"
 	responseFilename = "response"
 	bodyFilename     = "body"
+	relsFilename     = "rels"
 	fileCreateFlag   = os.O_RDWR | os.O_CREATE | os.O_EXCL
 )
 
@@ -82,6 +85,44 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
 	}
 
 	return err
+}
+
+func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
+	path := c.requestPath(req)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
+	if len(rels) == 0 {
+		os.Remove(filepath.Join(path, relsFilename))
+		return nil
+	}
+
+	relsFile, err := newTempFile(path, relsFilename)
+	if err != nil {
+		return err
+	}
+	defer relsFile.Close()
+
+	enc := gob.NewEncoder(relsFile)
+	if err = enc.Encode(&rels); err == nil {
+		relsFile.Keep = true
+	}
+
+	return err
+}
+
+func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
+	rels := make(hypermedia.Relations)
+	path := c.requestPath(req)
+	relsFile, err := os.Open(filepath.Join(path, relsFilename))
+	if err != nil {
+		return rels
+	}
+	defer relsFile.Close()
+
+	dec := gob.NewDecoder(relsFile)
+	dec.Decode(&rels)
+	return rels
 }
 
 func (c *FileCache) requestPath(r *http.Request) string {

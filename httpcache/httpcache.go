@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/lostisland/go-sawyer"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 )
 
@@ -24,6 +25,10 @@ type Adapter interface {
 
 	// Set caches a Response for a resource by its URL.
 	Set(*http.Request, *sawyer.Response) error
+
+	SetRels(*http.Request, hypermedia.Relations) error
+
+	Rels(*http.Request) hypermedia.Relations
 }
 
 func ResponseError(err error) *sawyer.Response {

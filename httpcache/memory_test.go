@@ -1,9 +1,11 @@
 package httpcache
 
 import (
+	"bytes"
 	"github.com/bmizerany/assert"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/httpcache/httpcachetest"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"io/ioutil"
 	"net/http"
@@ -62,6 +64,25 @@ func TestMemorySetAndGetCache(t *testing.T) {
 	err = res.Decode(test)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, test.A)
+}
+
+func TestMemoryCacheRelations(t *testing.T) {
+	cache := NewMemoryCache()
+	req := httpcachetest.Request("abc")
+	rels := hypermedia.Relations{"abc": hypermedia.Hyperlink("def")}
+
+	res := &sawyer.Response{
+		Response: &http.Response{
+			StatusCode:    1,
+			ContentLength: int64(0),
+			Body:          ioutil.NopCloser(&bytes.Buffer{}),
+		},
+	}
+	cache.Set(req, res)
+
+	assert.Equal(t, 0, len(cache.Rels(req)))
+	assert.Equal(t, nil, cache.SetRels(req, rels))
+	assert.Equal(t, 1, len(cache.Rels(req)))
 }
 
 type TestResource struct {
