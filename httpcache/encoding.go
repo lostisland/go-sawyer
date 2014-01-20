@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// Encode will create a CachedResponse from the sawyer Response, and encode it
+// to the given writer.
 func Encode(res *sawyer.Response, writer io.Writer) error {
 	resCopy := CachedResponse{
 		Expires:          expiration(res.Response),
@@ -33,10 +35,12 @@ func Encode(res *sawyer.Response, writer io.Writer) error {
 	return EncodeResponse(&resCopy, writer)
 }
 
+// EncodeResponse encodes the CachedResponse to the given writer.
 func EncodeResponse(cached *CachedResponse, writer io.Writer) error {
 	return gob.NewEncoder(writer).Encode(cached)
 }
 
+// EncodeBody copies the response's Body to the given writer.
 func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
 	if res.ContentLength == 0 {
 		return nil
@@ -52,6 +56,9 @@ func EncodeBody(res *sawyer.Response, bodyWriter io.Writer) error {
 	return err
 }
 
+// Decode decodes the CachedResponse from the given reader.  It is then wrapped
+// by a CachedResponseDecoder that is able to turn the CachedResponse data
+// to a sawyer Response.
 func Decode(reader io.Reader) (*CachedResponseDecoder, error) {
 	dec := gob.NewDecoder(reader)
 	res := &CachedResponse{}
@@ -87,6 +94,7 @@ type CachedResponseDecoder struct {
 	*CachedResponse
 }
 
+// Decode converts the embedded CachedResponse to a sawyer Response.
 func (r *CachedResponseDecoder) Decode(req *sawyer.Request) *sawyer.Response {
 	cached := r.CachedResponse
 	res := &sawyer.Response{
@@ -118,14 +126,17 @@ func (r *CachedResponseDecoder) Decode(req *sawyer.Request) *sawyer.Response {
 	return res
 }
 
+// IsExpired returns true if the CachedResponse needs to be refreshed.
 func (r *CachedResponseDecoder) IsExpired() bool {
 	return time.Now().After(r.Expires)
 }
 
+// IsFresh returns true if the CachedResponse does not need to be refreshed.
 func (r *CachedResponseDecoder) IsFresh() bool {
 	return !r.IsExpired()
 }
 
+// SetupRequest passes the cached ETag and Last Modified date to the request.
 func (r *CachedResponseDecoder) SetupRequest(req *http.Request) {
 	if etag := r.Header.Get(etagHeader); len(etag) > 0 {
 		req.Header.Set(ifNoneMatchHeader, etag)

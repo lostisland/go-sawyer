@@ -98,31 +98,32 @@ func (c *FileCache) UpdateCache(req *http.Request, res *http.Response) error {
 		return err
 	}
 
-	fullFile := filepath.Join(path, responseFilename)
-
-	responseFile, err := os.Open(fullFile)
+	file, err := os.Open(filepath.Join(path, responseFilename))
 	if err != nil {
 		return err
 	}
 
-	cached, err := Decode(responseFile)
-	responseFile.Close()
+	cached, err := Decode(file)
+	file.Close()
+
 	if err != nil {
 		return err
 	}
 
 	cached.Expires = expiration(res)
 
-	responseFile, err = os.Create(fullFile)
+	tmpFile, err := newTempFile(path, responseFilename)
 	if err != nil {
 		return err
 	}
+	defer tmpFile.Close()
 
-	if err = EncodeResponse(cached.CachedResponse, responseFile); err != nil {
-		return err
+	err = EncodeResponse(cached.CachedResponse, tmpFile)
+	if err == nil {
+		tmpFile.Keep = true
 	}
 
-	return nil
+	return err
 }
 
 func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error {

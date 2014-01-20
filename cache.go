@@ -9,13 +9,24 @@ import (
 // A Cacher has the ability to get and set caches for HTTP requests and resource
 // relations.  See the sawyer/httpcache package.
 type Cacher interface {
+	// Get gets a CachedResponse for the given request.
 	Get(*http.Request) (CachedResponse, error)
+
+	// Set caches the response for the given request.
 	Set(*http.Request, *Response) error
+
+	// UpdateCache updates the cache for the given request with the expiration from
+	// the response.
 	UpdateCache(*http.Request, *http.Response) error
+
+	// SetRels caches the given relations for the request.
 	SetRels(*http.Request, hypermedia.Relations) error
+
+	// Rels gets the cached relations for the given request.
 	Rels(*http.Request) (hypermedia.Relations, bool)
 }
 
+// CachedResponse is an interface for the httpcache CachedResponseDecoder.
 type CachedResponse interface {
 	Decode(*Request) *Response
 	SetupRequest(*http.Request)

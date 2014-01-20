@@ -9,27 +9,6 @@ import (
 	"net/http"
 )
 
-type cacheEntry struct {
-	Response  *bytes.Reader
-	Body      []byte
-	Relations hypermedia.Relations
-}
-
-func (e *cacheEntry) Decode(cacher sawyer.Cacher) (*CachedResponseDecoder, error) {
-	cachedResponse, err := Decode(e.Response)
-	e.Response.Seek(0, 0)
-
-	if err == nil {
-		cachedResponse.Cacher = cacher
-		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
-			res.Body = ioutil.NopCloser(bytes.NewBuffer(e.Body))
-			res.BodyClosed = false
-		}
-	}
-
-	return cachedResponse, err
-}
-
 // MemoryCache is a sawyer.Cacher that stores the entries in memory.
 type MemoryCache struct {
 	Cache map[string]*cacheEntry
@@ -107,6 +86,27 @@ func (c *MemoryCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 	}
 
 	return nil, false
+}
+
+type cacheEntry struct {
+	Response  *bytes.Reader
+	Body      []byte
+	Relations hypermedia.Relations
+}
+
+func (e *cacheEntry) Decode(cacher sawyer.Cacher) (*CachedResponseDecoder, error) {
+	cachedResponse, err := Decode(e.Response)
+	e.Response.Seek(0, 0)
+
+	if err == nil {
+		cachedResponse.Cacher = cacher
+		cachedResponse.SetBodyFunc = func(res *sawyer.Response) {
+			res.Body = ioutil.NopCloser(bytes.NewBuffer(e.Body))
+			res.BodyClosed = false
+		}
+	}
+
+	return cachedResponse, err
 }
 
 func (c *MemoryCache) getEntry(req *http.Request) (string, *cacheEntry, bool) {
