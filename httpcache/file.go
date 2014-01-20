@@ -112,18 +112,18 @@ func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error 
 	return err
 }
 
-func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
-	rels := make(hypermedia.Relations)
+func (c *FileCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 	path := c.requestPath(req)
 	relsFile, err := os.Open(filepath.Join(path, relsFilename))
 	if err != nil {
-		return rels
+		return nil, false
 	}
 	defer relsFile.Close()
 
+	rels := make(hypermedia.Relations)
 	dec := gob.NewDecoder(relsFile)
 	dec.Decode(&rels)
-	return rels
+	return rels, true
 }
 
 func (c *FileCache) requestPath(r *http.Request) string {

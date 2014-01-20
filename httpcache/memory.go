@@ -56,7 +56,7 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
 	c.Cache[key] = &cacheEntry{
 		bytes.NewReader(resBuffer.Bytes()),
 		bodyBuffer.Bytes(),
-		make(hypermedia.Relations),
+		nil,
 	}
 
 	return nil
@@ -73,11 +73,11 @@ func (c *MemoryCache) SetRels(req *http.Request, rels hypermedia.Relations) erro
 	return nil
 }
 
-func (c *MemoryCache) Rels(req *http.Request) hypermedia.Relations {
+func (c *MemoryCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
 	key := RequestKey(req)
-	if entry, ok := c.Cache[key]; ok {
-		return entry.Relations
+	if entry, ok := c.Cache[key]; ok && entry.Relations != nil {
+		return entry.Relations, true
 	}
 
-	return make(hypermedia.Relations)
+	return nil, false
 }

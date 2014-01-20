@@ -7,7 +7,7 @@ import (
 )
 
 type CachedResource interface {
-	Rels() hypermedia.Relations
+	Rels() (hypermedia.Relations, bool)
 	CacheRels(hypermedia.Relations)
 }
 
@@ -15,7 +15,7 @@ type Cacher interface {
 	Get(*http.Request) *Response
 	Set(*http.Request, *Response) error
 	SetRels(*http.Request, hypermedia.Relations) error
-	Rels(*http.Request) hypermedia.Relations
+	Rels(*http.Request) (hypermedia.Relations, bool)
 }
 
 type NoOpCache struct{}
@@ -32,8 +32,8 @@ func (c *NoOpCache) SetRels(req *http.Request, rels hypermedia.Relations) error 
 	return nil
 }
 
-func (c *NoOpCache) Rels(req *http.Request) hypermedia.Relations {
-	return make(hypermedia.Relations)
+func (c *NoOpCache) Rels(req *http.Request) (hypermedia.Relations, bool) {
+	return nil, false
 }
 
 var (

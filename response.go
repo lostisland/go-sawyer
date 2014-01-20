@@ -59,8 +59,8 @@ func (r *Response) Decode(resource interface{}) error {
 	if r.ResponseError == nil {
 		rels := hypermedia.Rels(resource)
 		if err := r.Cacher.SetRels(r.Request, rels); err == nil {
-			if cachedResponse, ok := resource.(CachedResource); ok {
-				cachedResponse.CacheRels(rels)
+			if cachedResource, ok := resource.(CachedResource); ok {
+				cachedResource.CacheRels(rels)
 			}
 		}
 	}
