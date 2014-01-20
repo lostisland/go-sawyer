@@ -3,6 +3,8 @@
 package mediatype
 
 import (
+	"encoding/json"
+	"io"
 	"mime"
 	"strings"
 )
@@ -132,3 +134,12 @@ const (
 )
 
 var guessableTypes = []string{"json", "xml"}
+
+func init() {
+	AddDecoder("json", func(r io.Reader) Decoder {
+		return json.NewDecoder(r)
+	})
+	AddEncoder("json", func(w io.Writer) Encoder {
+		return json.NewEncoder(w)
+	})
+}
