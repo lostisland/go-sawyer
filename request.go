@@ -31,7 +31,7 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
-	cached := r.cacher.Get(r)
+	cached := r.cacher.Get(r.Request)
 	if !cached.IsError() {
 		return cached
 	}
@@ -56,7 +56,7 @@ func (r *Request) Do(method string) *Response {
 	}
 
 	if !res.AnyError() {
-		r.cacher.Set(r, res)
+		r.cacher.Set(r.Request, res)
 	}
 
 	return res
