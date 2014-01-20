@@ -32,4 +32,11 @@ func (c *NoOpCache) Rels(req *http.Request) hypermedia.Relations {
 	return make(hypermedia.Relations)
 }
 
-var noOpResponse = ResponseError(errors.New("No Response"))
+var (
+	noOpResponse = ResponseError(errors.New("No Response"))
+	noOpCacher   Cacher
+)
+
+func init() {
+	noOpCacher = &NoOpCache{}
+}

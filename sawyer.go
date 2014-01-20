@@ -32,7 +32,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query(), &NoOpCache{}}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query(), noOpCacher}
 }
 
 // NewFromString returns a new Client given a string URL and an optional client.
