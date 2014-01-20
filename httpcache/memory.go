@@ -6,7 +6,6 @@ import (
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/hypermedia"
 	"io/ioutil"
-	"net/http"
 )
 
 type cacheEntry struct {
@@ -23,7 +22,7 @@ func NewMemoryCache() *MemoryCache {
 	return &MemoryCache{make(map[string]*cacheEntry)}
 }
 
-func (c *MemoryCache) Get(req *http.Request) *sawyer.Response {
+func (c *MemoryCache) Get(req *sawyer.Request) *sawyer.Response {
 	key := RequestKey(req)
 	entry, ok := c.Cache[key]
 	if !ok {
@@ -31,7 +30,7 @@ func (c *MemoryCache) Get(req *http.Request) *sawyer.Response {
 	}
 
 	res := Decode(entry.Response)
-	res.Request = req
+	res.Request = req.Request
 	res.Body = ioutil.NopCloser(bytes.NewBuffer(entry.Body))
 
 	entry.Response.Seek(0, 0)
@@ -39,7 +38,7 @@ func (c *MemoryCache) Get(req *http.Request) *sawyer.Response {
 	return res
 }
 
-func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
+func (c *MemoryCache) Set(req *sawyer.Request, res *sawyer.Response) error {
 	key := RequestKey(req)
 
 	bodyBuffer := &bytes.Buffer{}
@@ -61,7 +60,7 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
 	return nil
 }
 
-func (c *MemoryCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
+func (c *MemoryCache) SetRels(req *sawyer.Request, rels hypermedia.Relations) error {
 	key := RequestKey(req)
 	entry, ok := c.Cache[key]
 	if !ok {
@@ -72,7 +71,7 @@ func (c *MemoryCache) SetRels(req *http.Request, rels hypermedia.Relations) erro
 	return nil
 }
 
-func (c *MemoryCache) Rels(req *http.Request) hypermedia.Relations {
+func (c *MemoryCache) Rels(req *sawyer.Request) hypermedia.Relations {
 	key := RequestKey(req)
 	if entry, ok := c.Cache[key]; ok {
 		return entry.Relations

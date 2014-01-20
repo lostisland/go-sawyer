@@ -21,15 +21,15 @@ func TestCacheResponses(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// cache is empty
-	assert.Equal(t, true, cli.Cacher.Get(req.Request).IsError())
-	assert.Equal(t, 0, len(cli.Cacher.Rels(req.Request)))
+	assert.Equal(t, true, cli.Cacher.Get(req).IsError())
+	assert.Equal(t, 0, len(cli.Cacher.Rels(req)))
 
 	res := req.Get()
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
 
 	// rels are not cached yet
-	assert.Equal(t, 0, len(cli.Cacher.Rels(req.Request)))
+	assert.Equal(t, 0, len(cli.Cacher.Rels(req)))
 
 	value := &HttpCacheTestValue{}
 	assert.Equal(t, nil, res.Decode(value))
@@ -37,12 +37,12 @@ func TestCacheResponses(t *testing.T) {
 	assert.Equal(t, "Resource", value.Name)
 	assert.Equal(t, "Link", string(value.Url))
 	assert.Equal(t, 2, len(hypermedia.Rels(value)))
-	//assert.Equal(t, 2, len(cli.Cacher.Rels(req.Request)))
+	//assert.Equal(t, 2, len(cli.Cacher.Rels(req)))
 
 	// response is cached
-	res2 := cli.Cacher.Get(req.Request)
+	res2 := cli.Cacher.Get(req)
 	assert.Equal(t, false, res2.IsError())
-	res2 = cli.Cacher.Get(req.Request)
+	res2 = cli.Cacher.Get(req)
 	assert.Equal(t, false, res2.IsError())
 	assert.Equal(t, res.StatusCode, res2.StatusCode)
 	assert.Equal(t, res.Header.Get("Content-Type"), res2.Header.Get("Content-Type"))
@@ -56,8 +56,8 @@ func TestCacheResponses(t *testing.T) {
 	req2, err := cli.NewRequest("/")
 	assert.Equal(t, nil, err)
 	req2.Header.Set("Accept", "application/vnd.sawyer.v2+json")
-	assert.Equal(t, true, cli.Cacher.Get(req2.Request).IsError())
-	assert.Equal(t, 0, len(cli.Cacher.Rels(req2.Request)))
+	assert.Equal(t, true, cli.Cacher.Get(req2).IsError())
+	assert.Equal(t, 0, len(cli.Cacher.Rels(req2)))
 }
 
 func server(handler http.HandlerFunc) (*httptest.Server, *sawyer.Client) {

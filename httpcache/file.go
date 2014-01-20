@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/hypermedia"
-	"net/http"
 	"os"
 	"path/filepath"
 )
@@ -25,7 +24,7 @@ func NewFileCache(path string) *FileCache {
 	return &FileCache{path}
 }
 
-func (c *FileCache) Get(req *http.Request) *sawyer.Response {
+func (c *FileCache) Get(req *sawyer.Request) *sawyer.Response {
 	path := c.requestPath(req)
 
 	responseFile, err := os.Open(filepath.Join(path, responseFilename))
@@ -35,7 +34,7 @@ func (c *FileCache) Get(req *http.Request) *sawyer.Response {
 	defer responseFile.Close()
 
 	res := Decode(responseFile)
-	res.Request = req
+	res.Request = req.Request
 
 	bodyFile, err := os.Open(filepath.Join(path, bodyFilename))
 	if err != nil {
@@ -48,7 +47,7 @@ func (c *FileCache) Get(req *http.Request) *sawyer.Response {
 	return res
 }
 
-func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
+func (c *FileCache) Set(req *sawyer.Request, res *sawyer.Response) error {
 	path := c.requestPath(req)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
@@ -87,7 +86,7 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
 	return err
 }
 
-func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error {
+func (c *FileCache) SetRels(req *sawyer.Request, rels hypermedia.Relations) error {
 	path := c.requestPath(req)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
@@ -111,7 +110,7 @@ func (c *FileCache) SetRels(req *http.Request, rels hypermedia.Relations) error 
 	return err
 }
 
-func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
+func (c *FileCache) Rels(req *sawyer.Request) hypermedia.Relations {
 	rels := make(hypermedia.Relations)
 	path := c.requestPath(req)
 	relsFile, err := os.Open(filepath.Join(path, relsFilename))
@@ -125,7 +124,7 @@ func (c *FileCache) Rels(req *http.Request) hypermedia.Relations {
 	return rels
 }
 
-func (c *FileCache) requestPath(r *http.Request) string {
+func (c *FileCache) requestPath(r *sawyer.Request) string {
 	sha := RequestSha(r)
 	return filepath.Join(c.path, sha[0:2], sha[2:4], sha)
 }
