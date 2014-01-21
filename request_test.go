@@ -120,8 +120,9 @@ func TestSuccessfulGetWithoutDecoder(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	res := req.Get()
-	assert.NotEqual(t, nil, res.Decode(user), "response should have decoder error")
-	assert.Tf(t, strings.HasPrefix(res.Error(), "No decoder found for format booya"), "Bad error: %s", res.Error())
+	err = res.Decode(user)
+	assert.NotEqual(t, nil, err, "response should have decoder error")
+	assert.Tf(t, strings.HasPrefix(err.Error(), "No decoder found for format booya"), "Bad error: %s", res.Error())
 }
 
 func TestSuccessfulPost(t *testing.T) {

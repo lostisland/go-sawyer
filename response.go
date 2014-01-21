@@ -50,35 +50,50 @@ func (r *Response) Error() string {
 // relations.  This is meant to be called after an HTTP request, and will close
 // the response body.  The decoder is set from the response's MediaType.
 func (r *Response) Decode(resource interface{}) error {
-	if r.MediaType == nil {
-		return errors.New("No media type for this response")
+	if r.ResponseError != nil || r.Response == nil {
+		return r.ResponseError
 	}
 
-	if resource == nil || r.ResponseError != nil || r.BodyClosed {
-		return r.ResponseError
+	if r.MediaType == nil {
+		return errorNoMediaType
+	}
+
+	if resource == nil {
+		return errorNoResource
+	}
+
+	if r.BodyClosed {
+		return errorBodyClosed
 	}
 
 	defer r.Body.Close()
 	r.BodyClosed = true
 
-	r.ResponseError = r.DecodeFrom(resource, r.Body)
-	if r.ResponseError == nil {
-		rels := hypermedia.Rels(resource)
-		if err := r.Cacher.SetRels(r.Request, rels); err == nil {
-			if cachedResource, ok := resource.(hypermedia.CachedResource); ok {
-				cachedResource.CacheRels(rels)
-			}
-		}
+	if err := r.DecodeFrom(resource, r.Body); err != nil {
+		return err
 	}
 
-	return r.ResponseError
+	rels := hypermedia.Rels(resource)
+	if err := r.Cacher.SetRels(r.Request, rels); err != nil {
+		return err
+	}
+
+	if cachedResource, ok := resource.(hypermedia.CachedResource); ok {
+		cachedResource.CacheRels(rels)
+	}
+
+	return nil
 }
 
 // DecodeFrom decodes the resource from the given io.Reader, using the decoder
 // from the response's MediaType.
 func (r *Response) DecodeFrom(resource interface{}, body io.Reader) error {
-	if resource == nil || r.ContentLength < 1 {
-		return nil
+	if resource == nil {
+		return errorNoResource
+	}
+
+	if r.ContentLength < 1 {
+		return errorNoBody
 	}
 
 	dec, err := r.MediaType.Decoder(body)
@@ -143,3 +158,10 @@ func mediaType(res *http.Response) (*mediatype.MediaType, error) {
 	}
 	return nil, nil
 }
+
+var (
+	errorNoMediaType = errors.New("No media type for this response")
+	errorNoResource  = errors.New("No resource value provided")
+	errorNoBody      = errors.New("No response body to decode")
+	errorBodyClosed  = errors.New("Response body has already been read")
+)
