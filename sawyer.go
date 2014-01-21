@@ -68,7 +68,7 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 // to the given value, and get the relations from the value.
 func (c *Client) Rels(req *Request, value interface{}) (hypermedia.Relations, *Response) {
 	if rels, ok := c.Cacher.Rels(req.Request); ok {
-		return rels, &Response{}
+		return rels, NewResponse(nil)
 	}
 
 	res := req.Get()

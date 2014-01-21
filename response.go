@@ -133,10 +133,27 @@ func (r *Response) CacheRels(rels hypermedia.Relations) {
 	r.rels = rels
 }
 
+// NewResponse initializes a new Response with common internal values set.
+func NewResponse(res *http.Response) *Response {
+	if res == nil {
+		res = &http.Response{}
+	}
+
+	return &Response{
+		Response:   res,
+		Cacher:     noOpCacher,
+		BodyClosed: false,
+		isApiError: UseApiError(res.StatusCode),
+	}
+}
+
 // ResponseError returns an empty Response with the ResponseError set from the
 // given error.
 func ResponseError(err error) *Response {
-	return &Response{ResponseError: err, BodyClosed: true}
+	res := NewResponse(nil)
+	res.ResponseError = err
+	res.BodyClosed = true
+	return res
 }
 
 // UseApiError determines if the given status is considered an API error.

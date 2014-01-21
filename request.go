@@ -62,13 +62,9 @@ func (r *Request) Do(method string) *Response {
 		return ResponseError(err)
 	}
 
-	res := &Response{
-		MediaType:  mtype,
-		BodyClosed: false,
-		Response:   httpres,
-		Cacher:     r.Cacher,
-		isApiError: UseApiError(httpres.StatusCode),
-	}
+	res := NewResponse(httpres)
+	res.MediaType = mtype
+	res.Cacher = r.Cacher
 
 	if !res.AnyError() {
 		r.Cacher.Set(r.Request, res)

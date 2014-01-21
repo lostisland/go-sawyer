@@ -102,15 +102,14 @@ func decodableResponse(rawtype, rawbody string) (*Response, error) {
 		return nil, err
 	}
 
-	res := &Response{
-		Cacher:     noOpCacher,
-		MediaType:  mt,
-		BodyClosed: false,
-		Response: &http.Response{
-			Body:          ioutil.NopCloser(bytes.NewBufferString(rawbody)),
-			ContentLength: int64(len(rawbody)),
-		},
+	httpres := &http.Response{
+		Body:          ioutil.NopCloser(bytes.NewBufferString(rawbody)),
+		ContentLength: int64(len(rawbody)),
 	}
+
+	res := NewResponse(httpres)
+	res.MediaType = mt
+
 	return res, nil
 }
 

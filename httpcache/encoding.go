@@ -97,24 +97,23 @@ type CachedResponseDecoder struct {
 // Decode converts the embedded CachedResponse to a sawyer Response.
 func (r *CachedResponseDecoder) Decode(req *sawyer.Request) *sawyer.Response {
 	cached := r.CachedResponse
-	res := &sawyer.Response{
-		BodyClosed: false,
-		MediaType:  &cached.MediaType,
-		Response: &http.Response{
-			Status:           cached.Status,
-			StatusCode:       cached.StatusCode,
-			Proto:            cached.Proto,
-			ProtoMajor:       cached.ProtoMajor,
-			ProtoMinor:       cached.ProtoMinor,
-			Header:           cached.Header,
-			ContentLength:    cached.ContentLength,
-			TransferEncoding: cached.TransferEncoding,
-			Trailer:          cached.Trailer,
-			Request:          req.Request,
-		},
+	httpres := &http.Response{
+		Status:           cached.Status,
+		StatusCode:       cached.StatusCode,
+		Proto:            cached.Proto,
+		ProtoMajor:       cached.ProtoMajor,
+		ProtoMinor:       cached.ProtoMinor,
+		Header:           cached.Header,
+		ContentLength:    cached.ContentLength,
+		TransferEncoding: cached.TransferEncoding,
+		Trailer:          cached.Trailer,
+		Request:          req.Request,
 	}
 
+	res := sawyer.NewResponse(httpres)
+	res.MediaType = &cached.MediaType
 	res.Cacher = r.Cacher
+
 	if res.Cacher == nil {
 		res.Cacher = req.Cacher
 	}
