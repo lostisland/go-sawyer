@@ -6,10 +6,11 @@ import (
 	"github.com/lostisland/go-sawyer/hypermedia"
 	"github.com/lostisland/go-sawyer/mediatype"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+// see sawyer_test.go for definitions of structs and SetupServer
 
 func TestSuccessfulGet(t *testing.T) {
 	setup := Setup(t)
@@ -226,39 +227,4 @@ func TestResolveRequestQuery(t *testing.T) {
 	res := req.Get()
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 123, res.StatusCode)
-}
-
-type TestUser struct {
-	Id          int                  `json:"id"`
-	Login       string               `json:"login"`
-	Url         hypermedia.Hyperlink `json:"url"`
-	FooUrl      hypermedia.Hyperlink `json:"foo_url" rel:"foo"`
-	Whatever    hypermedia.Hyperlink `json:"whatever" rel:"whatevs"`
-	HomepageUrl string               `json:"homepage_url"`
-	*hypermedia.HALResource
-}
-
-func (u *TestUser) HyperfieldRels() {}
-
-type TestError struct {
-	Message string `json:"message"`
-}
-
-type SetupServer struct {
-	Client *Client
-	Server *httptest.Server
-	Mux    *http.ServeMux
-}
-
-func Setup(t *testing.T) *SetupServer {
-	mux := http.NewServeMux()
-	srv := httptest.NewServer(mux)
-	client, err := NewFromString(srv.URL+"?a=1&b=1", nil)
-	assert.Equalf(t, nil, err, "Unable to parse %s", srv.URL)
-
-	return &SetupServer{client, srv, mux}
-}
-
-func (s *SetupServer) Teardown() {
-	s.Server.Close()
 }

@@ -1,6 +1,7 @@
 package sawyer
 
 import (
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"net/url"
 	"strings"
@@ -60,6 +61,20 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 		return "", err
 	}
 	return c.ResolveReference(u).String(), nil
+}
+
+// Rels attempts to get the cached relations for the given request.  If it
+// hasn't been cached, send a GET to the request URL, decode the response body
+// to the given value, and get the relations from the value.
+func (c *Client) Rels(req *Request, value interface{}) (hypermedia.Relations, *Response) {
+	if rels, ok := c.Cacher.Rels(req.Request); ok {
+		return rels, &Response{}
+	}
+
+	res := req.Get()
+	res.Decode(value)
+
+	return hypermedia.Rels(value), res
 }
 
 // buildRequest assembles a net/http Request using the given relative url path.
