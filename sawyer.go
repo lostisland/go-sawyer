@@ -77,20 +77,6 @@ func (c *Client) Rels(req *Request, value interface{}) (hypermedia.Relations, *R
 	return hypermedia.Rels(value), res
 }
 
-// buildRequest assembles a net/http Request using the given relative url path.
-func buildRequest(c *Client, rawurl string) (*http.Request, error) {
-	u, err := c.ResolveReferenceString(rawurl)
-	if err != nil {
-		return nil, err
-	}
-
-	httpreq, err := http.NewRequest(GetMethod, u, nil)
-	for key, _ := range c.Header {
-		httpreq.Header.Set(key, c.Header.Get(key))
-	}
-	return httpreq, err
-}
-
 // mergeQueries merges the given url.Values into a single encoded URI query
 // string.
 func mergeQueries(queries ...url.Values) string {
