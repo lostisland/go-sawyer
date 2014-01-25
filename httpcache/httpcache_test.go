@@ -4,14 +4,144 @@ import (
 	"github.com/bmizerany/assert"
 	"github.com/lostisland/go-sawyer"
 	"github.com/lostisland/go-sawyer/hypermedia"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
 func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
+	CacheGet(cacher, t)
+	UnusedCache(cacher, t)
+	ClearsCache("POST", cacher, t)
+	ClearsCache("PUT", cacher, t)
+	ClearsCache("PATCH", cacher, t)
+	ClearsCache("DELETE", cacher, t)
 	GetSetCacheTestFor(cacher, t)
 	ETagExpirationTestFor(cacher, t)
+}
+
+func CacheGet(cacher sawyer.Cacher, t *testing.T) {
+	resp := ""
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
+		resp = resp + " "
+		w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+		w.WriteHeader(200)
+		w.Write([]byte(resp))
+	})
+	defer srv.Close()
+
+	req, err := cli.NewRequest("/")
+	assert.Equal(t, nil, err)
+
+	res := req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err := ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+}
+
+func UnusedCache(cacher sawyer.Cacher, t *testing.T) {
+	resp := ""
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
+		resp = resp + " "
+		w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+		w.WriteHeader(200)
+		if r.Method != "HEAD" {
+			w.Write([]byte(resp))
+		}
+	})
+	defer srv.Close()
+
+	req, err := cli.NewRequest("/")
+	assert.Equal(t, nil, err)
+
+	res := req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err := ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+
+	res = req.Options()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(2), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "  ", string(by))
+
+	res = req.Head()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(3), res.ContentLength)
+
+	res = req.Options()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(4), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "    ", string(by))
+
+	res = req.Head()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(5), res.ContentLength)
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+}
+
+func ClearsCache(method string, cacher sawyer.Cacher, t *testing.T) {
+	resp := ""
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
+		resp = resp + " "
+		w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+		w.WriteHeader(200)
+		w.Write([]byte(resp))
+	})
+	defer srv.Close()
+
+	req, err := cli.NewRequest("/")
+	assert.Equal(t, nil, err)
+
+	res := req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err := ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+
+	res = req.Do(method)
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(2), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "  ", string(by))
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(3), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "   ", string(by))
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(3), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "   ", string(by))
 }
 
 func GetSetCacheTestFor(cacher sawyer.Cacher, t *testing.T) {

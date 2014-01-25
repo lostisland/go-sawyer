@@ -37,7 +37,14 @@ func (c *Client) NewRequest(rawurl string) (*Request, error) {
 func (r *Request) Do(method string) *Response {
 	r.URL.RawQuery = r.Query.Encode()
 	r.Method = method
-	cached, cachedErr := r.Cacher.Get(r.Request)
+
+	cacher := r.Cacher
+	useCache, clearCache := r.cacherSwitch()
+	if !useCache {
+		cacher = noOpCacher
+	}
+
+	cached, cachedErr := cacher.Get(r.Request)
 	if cachedErr == nil {
 		if cached.IsFresh() {
 			return cached.Decode(r)
@@ -51,8 +58,8 @@ func (r *Request) Do(method string) *Response {
 		return ResponseError(err)
 	}
 
-	if cachedErr == nil && httpres.StatusCode == 304 {
-		r.Cacher.UpdateCache(r.Request, httpres)
+	if cachedErr == nil && !clearCache && httpres.StatusCode == 304 {
+		cacher.UpdateCache(r.Request, httpres)
 		return cached.Decode(r)
 	}
 
@@ -66,12 +73,16 @@ func (r *Request) Do(method string) *Response {
 		MediaType:  mtype,
 		BodyClosed: false,
 		Response:   httpres,
-		Cacher:     r.Cacher,
+		Cacher:     cacher,
 		isApiError: UseApiError(httpres.StatusCode),
 	}
 
 	if !res.AnyError() {
-		r.Cacher.Set(r.Request, res)
+		if clearCache {
+			r.Cacher.Clear(r.Request)
+		} else {
+			cacher.Set(r.Request, res)
+		}
 	}
 
 	return res
@@ -132,6 +143,17 @@ func (r *Request) SetBody(mtype *mediatype.MediaType, resource interface{}) erro
 	r.ContentLength = int64(buf.Len())
 	r.Body = ioutil.NopCloser(buf)
 	return nil
+}
+
+func (r *Request) cacherSwitch() (bool, bool) {
+	switch r.Method {
+	case GetMethod:
+		return true, false
+	case HeadMethod, OptionsMethod:
+		return false, false
+	default:
+		return false, true
+	}
 }
 
 const (

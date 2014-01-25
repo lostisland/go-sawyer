@@ -48,6 +48,15 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
 	return nil
 }
 
+func (c *MemoryCache) Clear(req *http.Request) error {
+	if key, entry, ok := c.getEntry(req); ok {
+		entry.Response = nil
+		c.Cache[key] = entry
+	}
+
+	return nil
+}
+
 func (c *MemoryCache) UpdateCache(req *http.Request, res *http.Response) error {
 	key, entry, ok := c.getEntry(req)
 	if !ok {
@@ -112,5 +121,8 @@ func (e *cacheEntry) Decode(cacher sawyer.Cacher) (*CachedResponseDecoder, error
 func (c *MemoryCache) getEntry(req *http.Request) (string, *cacheEntry, bool) {
 	key := RequestKey(req)
 	entry, ok := c.Cache[key]
+	if ok && entry.Response == nil {
+		ok = false
+	}
 	return key, entry, ok
 }
