@@ -39,8 +39,8 @@ func (r *Request) Do(method string) *Response {
 	r.Method = method
 
 	cacher := r.Cacher
-	useCache, clearCache := r.cacherSwitch()
-	if !useCache {
+	cacheBehavior := r.cacherBehavior()
+	if cacheBehavior != useCache {
 		cacher = noOpCacher
 	}
 
@@ -58,7 +58,7 @@ func (r *Request) Do(method string) *Response {
 		return ResponseError(err)
 	}
 
-	if cachedErr == nil && !clearCache && httpres.StatusCode == 304 {
+	if cachedErr == nil && cacheBehavior == useCache && httpres.StatusCode == 304 {
 		cacher.UpdateCache(r.Request, httpres)
 		return cached.Decode(r)
 	}
@@ -78,7 +78,7 @@ func (r *Request) Do(method string) *Response {
 	}
 
 	if !res.AnyError() {
-		if clearCache {
+		if cacheBehavior == resetCache {
 			r.Cacher.Reset(r.Request)
 		} else {
 			cacher.Set(r.Request, res)
@@ -145,16 +145,25 @@ func (r *Request) SetBody(mtype *mediatype.MediaType, resource interface{}) erro
 	return nil
 }
 
-func (r *Request) cacherSwitch() (bool, bool) {
+func (r *Request) cacherBehavior() int {
 	switch r.Method {
 	case GetMethod:
-		return true, false
+		return useCache
 	case HeadMethod, OptionsMethod:
-		return false, false
+		return noCache
+	//case DeleteMethod:
+	//	return clearCache
 	default:
-		return false, true
+		return resetCache
 	}
 }
+
+const (
+	noCache    = iota
+	useCache   = iota
+	resetCache = iota
+	clearCache = iota
+)
 
 const (
 	ctypeHeader   = "Content-Type"
