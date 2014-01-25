@@ -58,6 +58,11 @@ func (c *MemoryCache) Reset(req *http.Request) error {
 	return nil
 }
 
+func (c *MemoryCache) Clear(req *http.Request) error {
+	delete(c.Cache, RequestKey(req))
+	return nil
+}
+
 func (c *MemoryCache) UpdateCache(req *http.Request, res *http.Response) error {
 	key, entry, ok := c.getEntry(req)
 	if !ok {

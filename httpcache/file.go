@@ -99,6 +99,10 @@ func (c *FileCache) Reset(req *http.Request) error {
 	return nil
 }
 
+func (c *FileCache) Clear(req *http.Request) error {
+	return os.RemoveAll(c.requestPath(req))
+}
+
 func (c *FileCache) UpdateCache(req *http.Request, res *http.Response) error {
 	path := c.requestPath(req)
 	if err := os.MkdirAll(path, 0755); err != nil {

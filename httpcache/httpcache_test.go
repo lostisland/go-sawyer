@@ -17,7 +17,7 @@ func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	ResetsCache("POST", cacher, t)
 	ResetsCache("PUT", cacher, t)
 	ResetsCache("PATCH", cacher, t)
-	ResetsCache("DELETE", cacher, t)
+	ClearsCache(cacher, t)
 	GetSetCacheTestFor(cacher, t)
 	ETagExpirationTestFor(cacher, t)
 }
@@ -141,6 +141,60 @@ func ResetsCache(method string, cacher sawyer.Cacher, t *testing.T) {
 	rels, ok = cacher.Rels(httpreq)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, "/foo", string(rels["foo"]))
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(3), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "   ", string(by))
+
+	res = req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(3), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "   ", string(by))
+}
+
+func ClearsCache(cacher sawyer.Cacher, t *testing.T) {
+	resp := ""
+	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
+		resp = resp + " "
+		w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+		w.WriteHeader(200)
+		w.Write([]byte(resp))
+	})
+	defer srv.Close()
+
+	req, err := cli.NewRequest("/")
+	assert.Equal(t, nil, err)
+
+	res := req.Get()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(1), res.ContentLength)
+	by, err := ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, " ", string(by))
+
+	// simulate cached relations
+	httpreq := req.Request
+	cacher.SetRels(httpreq, hypermedia.Relations{"foo": hypermedia.Hyperlink("/foo")})
+
+	rels, ok := cacher.Rels(httpreq)
+	assert.Equal(t, true, ok)
+	assert.Equal(t, "/foo", string(rels["foo"]))
+
+	res = req.Delete()
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, int64(2), res.ContentLength)
+	by, err = ioutil.ReadAll(res.Body)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "  ", string(by))
+
+	// relations cache is cleared
+	rels, ok = cacher.Rels(httpreq)
+	assert.Equal(t, false, ok)
 
 	res = req.Get()
 	assert.Equal(t, 200, res.StatusCode)

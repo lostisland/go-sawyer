@@ -80,6 +80,8 @@ func (r *Request) Do(method string) *Response {
 	if !res.AnyError() {
 		if cacheBehavior == resetCache {
 			r.Cacher.Reset(r.Request)
+		} else if cacheBehavior == clearCache {
+			r.Cacher.Clear(r.Request)
 		} else {
 			cacher.Set(r.Request, res)
 		}
@@ -151,8 +153,8 @@ func (r *Request) cacherBehavior() int {
 		return useCache
 	case HeadMethod, OptionsMethod:
 		return noCache
-	//case DeleteMethod:
-	//	return clearCache
+	case DeleteMethod:
+		return clearCache
 	default:
 		return resetCache
 	}
