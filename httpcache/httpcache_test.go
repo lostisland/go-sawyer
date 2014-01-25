@@ -14,10 +14,10 @@ import (
 func CacheResponsesTestFor(cacher sawyer.Cacher, t *testing.T) {
 	CacheGet(cacher, t)
 	UnusedCache(cacher, t)
-	ClearsCache("POST", cacher, t)
-	ClearsCache("PUT", cacher, t)
-	ClearsCache("PATCH", cacher, t)
-	ClearsCache("DELETE", cacher, t)
+	ResetsCache("POST", cacher, t)
+	ResetsCache("PUT", cacher, t)
+	ResetsCache("PATCH", cacher, t)
+	ResetsCache("DELETE", cacher, t)
 	GetSetCacheTestFor(cacher, t)
 	ETagExpirationTestFor(cacher, t)
 }
@@ -102,7 +102,7 @@ func UnusedCache(cacher sawyer.Cacher, t *testing.T) {
 	assert.Equal(t, " ", string(by))
 }
 
-func ClearsCache(method string, cacher sawyer.Cacher, t *testing.T) {
+func ResetsCache(method string, cacher sawyer.Cacher, t *testing.T) {
 	resp := ""
 	srv, cli := server(cacher, func(w http.ResponseWriter, r *http.Request) {
 		resp = resp + " "
@@ -122,12 +122,25 @@ func ClearsCache(method string, cacher sawyer.Cacher, t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, " ", string(by))
 
+	// simulate cached relations
+	httpreq := req.Request
+	cacher.SetRels(httpreq, hypermedia.Relations{"foo": hypermedia.Hyperlink("/foo")})
+
+	rels, ok := cacher.Rels(httpreq)
+	assert.Equal(t, true, ok)
+	assert.Equal(t, "/foo", string(rels["foo"]))
+
 	res = req.Do(method)
 	assert.Equal(t, 200, res.StatusCode)
 	assert.Equal(t, int64(2), res.ContentLength)
 	by, err = ioutil.ReadAll(res.Body)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "  ", string(by))
+
+	// relations are still cached after the resource has been updated
+	rels, ok = cacher.Rels(httpreq)
+	assert.Equal(t, true, ok)
+	assert.Equal(t, "/foo", string(rels["foo"]))
 
 	res = req.Get()
 	assert.Equal(t, 200, res.StatusCode)

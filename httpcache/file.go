@@ -92,7 +92,7 @@ func (c *FileCache) Set(req *http.Request, res *sawyer.Response) error {
 	return err
 }
 
-func (c *FileCache) Clear(req *http.Request) error {
+func (c *FileCache) Reset(req *http.Request) error {
 	path := c.requestPath(req)
 	os.Remove(filepath.Join(path, responseFilename))
 	os.Remove(filepath.Join(path, bodyFilename))

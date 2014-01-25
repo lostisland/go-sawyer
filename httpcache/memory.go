@@ -9,7 +9,8 @@ import (
 	"net/http"
 )
 
-// MemoryCache is a sawyer.Cacher that stores the entries in memory.
+// MemoryCache is a sawyer.Cacher that stores the entries in memory.  This is
+// only intended for testing, and should not be used in production.
 type MemoryCache struct {
 	Cache map[string]*cacheEntry
 }
@@ -48,7 +49,7 @@ func (c *MemoryCache) Set(req *http.Request, res *sawyer.Response) error {
 	return nil
 }
 
-func (c *MemoryCache) Clear(req *http.Request) error {
+func (c *MemoryCache) Reset(req *http.Request) error {
 	if key, entry, ok := c.getEntry(req); ok {
 		entry.Response = nil
 		c.Cache[key] = entry

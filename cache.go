@@ -15,7 +15,8 @@ type Cacher interface {
 	// Set caches the response for the given request.
 	Set(*http.Request, *Response) error
 
-	Clear(*http.Request) error
+	// Reset removes the cached response and body, but leaves the cached relations.
+	Reset(*http.Request) error
 
 	// UpdateCache updates the cache for the given request with the expiration from
 	// the response.
@@ -50,7 +51,7 @@ func (c *noOpCache) UpdateCache(req *http.Request, res *http.Response) error {
 	return nil
 }
 
-func (c *noOpCache) Clear(req *http.Request) error {
+func (c *noOpCache) Reset(req *http.Request) error {
 	return nil
 }
 

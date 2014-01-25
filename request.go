@@ -79,7 +79,7 @@ func (r *Request) Do(method string) *Response {
 
 	if !res.AnyError() {
 		if clearCache {
-			r.Cacher.Clear(r.Request)
+			r.Cacher.Reset(r.Request)
 		} else {
 			cacher.Set(r.Request, res)
 		}
