@@ -50,12 +50,16 @@ func (r *Response) Error() string {
 // relations.  This is meant to be called after an HTTP request, and will close
 // the response body.  The decoder is set from the response's MediaType.
 func (r *Response) Decode(resource interface{}) error {
+	if r.BodyClosed {
+		return errors.New("Body is already closed")
+	}
+
 	if r.MediaType == nil {
 		return errors.New("No media type for this response")
 	}
 
-	if resource == nil || r.ResponseError != nil || r.BodyClosed {
-		return r.ResponseError
+	if r.ResponseError != nil {
+		return errors.New("Existing Response error")
 	}
 
 	defer r.Body.Close()
@@ -77,8 +81,8 @@ func (r *Response) Decode(resource interface{}) error {
 // DecodeFrom decodes the resource from the given io.Reader, using the decoder
 // from the response's MediaType.
 func (r *Response) DecodeFrom(resource interface{}, body io.Reader) error {
-	if resource == nil || r.ContentLength < 1 {
-		return nil
+	if resource == nil {
+		return errors.New("No resource")
 	}
 
 	dec, err := r.MediaType.Decoder(body)
