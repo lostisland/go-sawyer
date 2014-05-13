@@ -125,7 +125,7 @@ func (r *Response) CacheRels(rels hypermedia.Relations) {
 // ResponseError returns an empty Response with the ResponseError set from the
 // given error.
 func ResponseError(err error) *Response {
-	return &Response{ResponseError: err, BodyClosed: true}
+	return &Response{ResponseError: err, BodyClosed: true, Response: &http.Response{}}
 }
 
 // UseApiError determines if the given status is considered an API error.
