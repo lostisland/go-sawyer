@@ -70,7 +70,7 @@ func (r *Response) decode(output interface{}) {
 }
 
 func ResponseError(err error) *Response {
-	return &Response{ResponseError: err, BodyClosed: true}
+	return &Response{ResponseError: err, BodyClosed: true, Response: &http.Response{}}
 }
 
 func UseApiError(status int) bool {
