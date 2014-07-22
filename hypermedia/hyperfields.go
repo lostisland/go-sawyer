@@ -21,6 +21,7 @@ func HyperFieldRelations(res interface{}, rels Relations) Relations {
 	if rels == nil {
 		rels = make(Relations)
 	}
+
 	t := reflect.TypeOf(res).Elem()
 	v := reflect.ValueOf(res).Elem()
 	fieldlen := t.NumField()

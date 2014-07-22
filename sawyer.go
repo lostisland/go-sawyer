@@ -1,9 +1,7 @@
 package sawyer
 
 import (
-	"encoding/json"
-	"github.com/lostisland/go-sawyer/mediatype"
-	"io"
+	"github.com/lostisland/go-sawyer/hypermedia"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,6 +17,7 @@ type Client struct {
 	Endpoint   *url.URL
 	Header     http.Header
 	Query      url.Values
+	Cacher     Cacher
 }
 
 // New returns a new Client with a given a URL and an optional client.
@@ -31,7 +30,7 @@ func New(endpoint *url.URL, client *http.Client) *Client {
 		endpoint.Path = endpoint.Path + "/"
 	}
 
-	return &Client{client, endpoint, make(http.Header), endpoint.Query()}
+	return &Client{client, endpoint, make(http.Header), endpoint.Query(), noOpCacher}
 }
 
 // NewFromString returns a new Client given a string URL and an optional client.
@@ -64,6 +63,36 @@ func (c *Client) ResolveReferenceString(rawurl string) (string, error) {
 	return c.ResolveReference(u).String(), nil
 }
 
+// Rels attempts to get the cached relations for the given request.  If it
+// hasn't been cached, send a GET to the request URL, decode the response body
+// to the given value, and get the relations from the value.
+func (c *Client) Rels(req *Request, value interface{}) (hypermedia.Relations, *Response) {
+	if rels, ok := c.Cacher.Rels(req.Request); ok {
+		return rels, &Response{}
+	}
+
+	res := req.Get()
+	res.Decode(value)
+
+	return hypermedia.Rels(value), res
+}
+
+// buildRequest assembles a net/http Request using the given relative url path.
+func buildRequest(c *Client, rawurl string) (*http.Request, error) {
+	u, err := c.ResolveReferenceString(rawurl)
+	if err != nil {
+		return nil, err
+	}
+
+	httpreq, err := http.NewRequest(GetMethod, u, nil)
+	for key, _ := range c.Header {
+		httpreq.Header.Set(key, c.Header.Get(key))
+	}
+	return httpreq, err
+}
+
+// mergeQueries merges the given url.Values into a single encoded URI query
+// string.
 func mergeQueries(queries ...url.Values) string {
 	merged := make(url.Values)
 	for _, q := range queries {
@@ -76,13 +105,4 @@ func mergeQueries(queries ...url.Values) string {
 		}
 	}
 	return merged.Encode()
-}
-
-func init() {
-	mediatype.AddDecoder("json", func(r io.Reader) mediatype.Decoder {
-		return json.NewDecoder(r)
-	})
-	mediatype.AddEncoder("json", func(w io.Writer) mediatype.Encoder {
-		return json.NewEncoder(w)
-	})
 }

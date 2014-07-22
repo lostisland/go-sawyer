@@ -8,14 +8,44 @@ import (
 	"net/url"
 )
 
+// Relations is a map of keys that point to Hyperlink objects.
+type Relations map[string]Hyperlink
+
 // Rels returns a new Relations object.
 func NewRels() Relations {
 	return Relations{}
 }
 
-func Rels(resource interface{}) Relations {
-	rels := NewRels()
+// Rel fetches and expands the Hyperlink by its given key in the Relations map.
+func (h Relations) Rel(name string, m M) (*url.URL, error) {
+	if rel, ok := h[name]; ok {
+		return rel.Expand(m)
+	}
+	return nil, fmt.Errorf("No %s relation found", name)
+}
 
+// Rels gets the hypermedia relations from the given resource.
+func Rels(resource interface{}) Relations {
+	cachedResource, ok := resource.(CachedResource)
+	if ok {
+		if rels, cached := cachedResource.Rels(); cached {
+			return rels
+		}
+	}
+
+	rels := NewRels()
+	FillRels(resource, rels)
+
+	if ok {
+		cachedResource.CacheRels(rels)
+	}
+
+	return rels
+}
+
+// FillRels populates the given relations object from the relations in the
+// resource.
+func FillRels(resource interface{}, rels Relations) {
 	if hypermediaRel, ok := resource.(HyperfieldResource); ok {
 		HyperFieldRelations(hypermediaRel, rels)
 	}
@@ -23,8 +53,6 @@ func Rels(resource interface{}) Relations {
 	if hypermediaRel, ok := resource.(HypermediaResource); ok {
 		hypermediaRel.HypermediaRels(rels)
 	}
-
-	return rels
 }
 
 // Hyperlink is a string url.  If it is a uri template, it can be converted to
@@ -58,18 +86,14 @@ func (l Hyperlink) Expand(m M) (*url.URL, error) {
 // M represents a map of values to expand a Hyperlink.
 type M map[string]interface{}
 
-// Relations is a map of keys that point to Hyperlink objects.
-type Relations map[string]Hyperlink
-
-// Rel fetches and expands the Hyperlink by its given key in the Relations map.
-func (h Relations) Rel(name string, m M) (*url.URL, error) {
-	if rel, ok := h[name]; ok {
-		return rel.Expand(m)
-	}
-	return nil, fmt.Errorf("No %s relation found", name)
-}
-
 // A HypermediaResource has link relations for next actions of a resource.
 type HypermediaResource interface {
 	HypermediaRels(Relations)
+}
+
+// A CachedResource is capable of caching the relations locally, so that
+// multiple accesses don't require parsing it again.
+type CachedResource interface {
+	Rels() (Relations, bool)
+	CacheRels(Relations)
 }

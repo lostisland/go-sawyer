@@ -3,6 +3,8 @@ package sawyer
 import (
 	"github.com/bmizerany/assert"
 	"github.com/lostisland/go-sawyer/hypermedia"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 )
@@ -128,4 +130,91 @@ func TestResolveClientRelativeHyperlink(t *testing.T) {
 	}
 
 	assert.Equal(t, "http://github.enterprise.com/api/v3/repos/foo", u)
+}
+
+func TestRelsWithoutCache(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	setup.Mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		w.Write([]byte(`{"url":"/foo"}`))
+	})
+
+	cli := setup.Client
+	req, err := cli.NewRequest("user")
+	assert.Equal(t, nil, err)
+
+	rels, res := cli.Rels(req, &TestUser{HALResource: &hypermedia.HALResource{}})
+	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, false, res.AnyError())
+	// includes both hyperfield rels
+	assert.Equal(t, 3, len(rels), rels)
+	assert.Equal(t, "/foo", string(rels["Url"]))
+}
+
+func TestRelsWithCache(t *testing.T) {
+	setup := Setup(t)
+	defer setup.Teardown()
+
+	setup.Mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		w.Write([]byte(`{"url":"/foo"}`))
+	})
+
+	cli := setup.Client
+	cli.Cacher = &ClientRelsCacher{noOpCache: &noOpCache{}}
+	req, err := cli.NewRequest("user")
+	assert.Equal(t, nil, err)
+
+	rels, res := cli.Rels(req, &TestUser{HALResource: &hypermedia.HALResource{}})
+	assert.Equal(t, false, res.AnyError())
+	// includes both hyperfield rels
+	assert.Equal(t, 1, len(rels), rels)
+	assert.Equal(t, "/foo", string(rels["cached"]))
+}
+
+type TestUser struct {
+	Id          int                  `json:"id"`
+	Login       string               `json:"login"`
+	Url         hypermedia.Hyperlink `json:"url"`
+	FooUrl      hypermedia.Hyperlink `json:"foo_url" rel:"foo"`
+	Whatever    hypermedia.Hyperlink `json:"whatever" rel:"whatevs"`
+	HomepageUrl string               `json:"homepage_url"`
+	*hypermedia.HALResource
+}
+
+func (u *TestUser) HyperfieldRels() {}
+
+type TestError struct {
+	Message string `json:"message"`
+}
+
+type SetupServer struct {
+	Client *Client
+	Server *httptest.Server
+	Mux    *http.ServeMux
+}
+
+func Setup(t *testing.T) *SetupServer {
+	mux := http.NewServeMux()
+	srv := httptest.NewServer(mux)
+	client, err := NewFromString(srv.URL+"?a=1&b=1", nil)
+	assert.Equalf(t, nil, err, "Unable to parse %s", srv.URL)
+
+	return &SetupServer{client, srv, mux}
+}
+
+func (s *SetupServer) Teardown() {
+	s.Server.Close()
+}
+
+type ClientRelsCacher struct {
+	*noOpCache
+}
+
+func (c *ClientRelsCacher) Rels(req *http.Request) (hypermedia.Relations, bool) {
+	return hypermedia.Relations{"cached": hypermedia.Hyperlink("/foo")}, true
 }

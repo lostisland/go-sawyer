@@ -3,6 +3,8 @@
 package mediatype
 
 import (
+	"encoding/json"
+	"io"
 	"mime"
 	"strings"
 )
@@ -41,7 +43,7 @@ by looking for common strings anywhere in the media type.  For instance,
 The Format is used to get an Encoder and a Decoder.
 */
 type MediaType struct {
-	full     string
+	Full     string
 	Type     string
 	MainType string
 	SubType  string
@@ -60,7 +62,7 @@ func Parse(v string) (*MediaType, error) {
 	}
 
 	return parse(&MediaType{
-		full:   v,
+		Full:   v,
 		Type:   mt,
 		Params: params,
 	})
@@ -68,7 +70,7 @@ func Parse(v string) (*MediaType, error) {
 
 // String returns the full string representation of the MediaType.
 func (m *MediaType) String() string {
-	return m.full
+	return m.Full
 }
 
 // IsVendor determines if this MediaType is associated with commercially
@@ -132,3 +134,12 @@ const (
 )
 
 var guessableTypes = []string{"json", "xml"}
+
+func init() {
+	AddDecoder("json", func(r io.Reader) Decoder {
+		return json.NewDecoder(r)
+	})
+	AddEncoder("json", func(w io.Writer) Encoder {
+		return json.NewEncoder(w)
+	})
+}

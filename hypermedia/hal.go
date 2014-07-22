@@ -12,6 +12,8 @@ type HALResource struct {
 	rels  Relations
 }
 
+// HypermediaRels implements the HypermediaResource interface by getting the
+// Relations from the Links property.
 func (r *HALResource) HypermediaRels(rels Relations) {
 	if r.Links == nil {
 		return
