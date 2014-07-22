@@ -7,9 +7,6 @@ import (
 	"strings"
 )
 
-// The default httpClient used if one isn't specified.
-var httpClient = &http.Client{}
-
 // A Client wraps an *http.Client with a base url Endpoint and common header and
 // query values.
 type Client struct {
@@ -23,7 +20,7 @@ type Client struct {
 // New returns a new Client with a given a URL and an optional client.
 func New(endpoint *url.URL, client *http.Client) *Client {
 	if client == nil {
-		client = httpClient
+		client = http.DefaultClient
 	}
 
 	if len(endpoint.Path) > 0 && !strings.HasSuffix(endpoint.Path, "/") {
