@@ -18,7 +18,7 @@ type User struct {
 }
 
 class ApiError struct {
-  Message strign `json:"message"`
+  Message string `json:"message"`
 }
 
 client := sawyer.NewFromString("https://api.github.com")
